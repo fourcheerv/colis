@@ -119,7 +119,7 @@
 </head>
 <body>
     <h1>Formulaire de Réception de Colis</h1>
-    <form id="packageForm">
+    <form id="packageForm" method="POST" action="http://votre-serveur.com/send-email">
         <label for="recipientName">Nom du destinataire :</label>
         <input type="text" id="recipientName" name="recipientName" required>
         
@@ -129,13 +129,8 @@
         <label for="packageCount">Nombre de colis :</label>
         <input type="number" id="packageCount" name="packageCount" min="1" required>
         
-        <form id="packageForm" method="POST" action="http://votre-serveur.com/send-email">
-            <!-- Les champs restent identiques -->
-            <label for="email">Adresse email :</label>
-            <input type="email" id="email" name="email" required>
-            <!-- Autres champs -->
-            <button type="submit">Valider</button>
-        </form>
+        <label for="email">Adresse email :</label>
+        <input type="email" id="email" name="email" required>
         
         <label for="fileUpload">Télécharger une image :</label>
         <input type="file" id="fileUpload" accept="image/*">
