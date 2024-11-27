@@ -189,6 +189,13 @@
 
         document.getElementById("clearSignature").addEventListener("click", () => {
             signaturePad.clear();
+
+            // Validation du formulaire : Vérifier si la signature est vide
+        document.getElementById('packageForm').addEventListener('submit', (e) => {
+            if (signaturePad.isEmpty()) {
+                e.preventDefault();
+                alert('Veuillez signer avant de soumettre le formulaire.');
+            }
         });
     </script>
 </body>
