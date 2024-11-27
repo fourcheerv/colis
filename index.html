@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulaire de Réception de Colis</title>
     <style>
-        /* Styles pour la page */
+        /* Styles CSS pour la mise en page */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -39,7 +39,7 @@
             display: block;
         }
 
-        input, button, canvas {
+        input, button {
             width: 100%;
             margin-bottom: 15px;
         }
@@ -55,17 +55,8 @@
             border-radius: 5px;
         }
 
-        #imagePreview img {
-            max-width: 100%;
-            max-height: 200px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
         canvas {
             border: 1px solid #ccc;
-            border-radius: 5px;
             background-color: #fff;
         }
 
@@ -90,6 +81,14 @@
         #clearSignature:hover {
             background-color: #c82333;
         }
+
+        #imagePreview img {
+            max-width: 100px;
+            max-height: 100px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -110,85 +109,56 @@
         <label for="deliveryDate">Date et Heure de réception :</label>
         <input type="datetime-local" id="deliveryDate" name="deliveryDate" required>
         
-        <label for="fileUpload">Prendre une photo :</label>
-        <input type="file" id="fileUpload" accept="image/*" capture="camera">
+        <label for="fileUpload">Télécharger une image :</label>
+        <input type="file" id="fileUpload" accept="image/*" capture="camera" multiple>
         <div id="imagePreview" class="image-preview"></div>
 
         <label>Signature :</label>
-        <canvas id="signaturePad" width="600" height="200"></canvas>
+        <canvas id="signaturePad" width="500" height="200"></canvas>
         <button type="button" id="clearSignature">Effacer la signature</button>
         
         <button type="submit">Valider</button>
     </form>
 
+    <!-- Importation de la bibliothèque Signature Pad -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script>
-        // Gestion des images
-        const fileUpload = document.getElementById("fileUpload");
-        const imagePreview = document.getElementById("imagePreview");
-        let imageCount = 0; // Nombre d'images déjà ajoutées
-        const maxImages = 3; // Limite des images autorisées
+        // Initialisation de Signature Pad
+        const canvas = document.getElementById('signaturePad');
+        const signaturePad = new SignaturePad(canvas);
 
-        fileUpload.addEventListener("change", () => {
-            if (imageCount >= maxImages) {
-                alert("Vous ne pouvez pas ajouter plus de 3 images.");
-                return;
-            }
-
-            const file = fileUpload.files[0];
-            if (!file || !file.type.startsWith("image/")) return;
-
-            // Lire et redimensionner l'image
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-
-                img.onload = () => {
-                    // Créer un canvas pour redimensionner l'image
-                    const canvas = document.createElement("canvas");
-                    const maxWidth = 800; // Largeur maximale
-                    const maxHeight = 800; // Hauteur maximale
-
-                    let width = img.width;
-                    let height = img.height;
-
-                    // Calcul du ratio pour redimensionner
-                    if (width > maxHeight && width > maxWidth) {
-                        height = (height * maxWidth) / width;
-                        width = maxWidth;
-                    } else if (height > width && height > maxHeight) {
-                        width = (width * maxHeight) / height;
-                        height = maxHeight;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Ajouter l'image redimensionnée à l'aperçu
-                    const previewImage = document.createElement("img");
-                    previewImage.src = canvas.toDataURL("image/jpeg");
-                    imagePreview.appendChild(previewImage);
-
-                    // Augmenter le compteur d'images
-                    imageCount++;
-                };
-            };
-            reader.readAsDataURL(file);
-
-            // Réinitialiser le champ de fichier pour permettre d'ajouter une nouvelle image
-            fileUpload.value = "";
+        // Bouton pour effacer la signature
+        document.getElementById('clearSignature').addEventListener('click', () => {
+            signaturePad.clear();
         });
 
-        // Gestion de la signature
-        const signatureCanvas = document.getElementById("signaturePad");
-        const signaturePad = new SignaturePad(signatureCanvas);
+        // Prévisualisation des images téléchargées
+        const fileUpload = document.getElementById("fileUpload");
+        const imagePreview = document.getElementById("imagePreview");
 
-        document.getElementById("clearSignature").addEventListener("click", () => {
-            signaturePad.clear();
+        fileUpload.addEventListener("change", () => {
+            const files = fileUpload.files;
+            imagePreview.innerHTML = "";
+
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement("img");
+                        img.src = e.target.result;
+                        imagePreview.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        // Validation du formulaire : Vérifier si la signature est vide
+        document.getElementById('packageForm').addEventListener('submit', (e) => {
+            if (signaturePad.isEmpty()) {
+                e.preventDefault();
+                alert('Veuillez signer avant de soumettre le formulaire.');
+            }
         });
     </script>
 </body>
