@@ -23,7 +23,7 @@
         }
 
         form {
-            max-width: 500px;
+            max-width: 600px; /* Augmenter la largeur du formulaire */
             width: 90%;
             padding: 20px;
             border: 1px solid #ccc;
@@ -55,8 +55,8 @@
 
         canvas {
             border: 1px solid #ccc;
-            height: 200px;
             cursor: crosshair;
+            height: 300px;  /* Augmenter la hauteur du canvas */
         }
 
         button {
@@ -108,7 +108,7 @@
             }
 
             canvas {
-                height: 150px;
+                height: 250px; /* Réduire la hauteur sur les petits écrans */
             }
         }
 
@@ -122,7 +122,7 @@
             }
 
             canvas {
-                height: 120px;
+                height: 200px; /* Ajuster encore plus la hauteur pour les très petits écrans */
             }
         }
     </style>
@@ -157,11 +157,11 @@
         // Gestion de la signature
         const signaturePad = document.getElementById("signaturePad");
         const ctx = signaturePad.getContext("2d");
-        signaturePad.width = window.innerWidth * 0.9;  // Adaptation responsive
-        signaturePad.height = 200;
+        signaturePad.width = window.innerWidth * 0.9;  // Le canvas prend 90% de la largeur de l'écran
+        signaturePad.height = 300;  // Hauteur augmentée pour plus d'espace
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, signaturePad.width, signaturePad.height);
-        
+
         let drawing = false;
         let lastX = 0;
         let lastY = 0;
@@ -183,7 +183,7 @@
         // Détection de la fin du dessin
         signaturePad.addEventListener("mouseup", stopDrawing);
         signaturePad.addEventListener("touchend", stopDrawing);
-        
+
         // Commencer à dessiner
         function startDrawing(e) {
             drawing = true;
