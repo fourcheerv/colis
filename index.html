@@ -11,13 +11,13 @@
             padding: 0;
             background: #f4f4f9;
             display: flex;
-            flex-direction: column; /* Arrange les éléments verticalement */
-            align-items: center; /* Centre les éléments horizontalement */
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
-            text-align: center; /* Centre le texte dans le conteneur */
-            margin: 20px 0; /* Espacement avec le haut et le formulaire */
+            text-align: center;
+            margin: 20px 0;
             font-size: 1.8em;
             color: #333;
         }
@@ -81,6 +81,18 @@
             background-color: #c82333;
         }
 
+        .image-preview {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .image-preview img {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+        }
+
         /* Styles Responsive */
         @media (max-width: 768px) {
             form {
@@ -131,13 +143,69 @@
         <input type="email" id="email" name="email" required>
         
         <label for="fileUpload">Télécharger une image :</label>
-        <input type="file" id="fileUpload" accept="image/*">
-        
+        <input type="file" id="fileUpload" accept="image/*" multiple>
+        <div id="imagePreview" class="image-preview"></div>
+
         <label>Signature :</label>
         <canvas id="signaturePad"></canvas>
         <button type="button" id="clearSignature">Effacer la signature</button>
         
         <button type="submit">Valider</button>
     </form>
+
+    <script>
+        // Gestion de la signature
+        const signaturePad = document.getElementById("signaturePad");
+        const ctx = signaturePad.getContext("2d");
+        signaturePad.width = window.innerWidth * 0.9;  // Adaptation responsive
+        signaturePad.height = 200;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, signaturePad.width, signaturePad.height);
+        let drawing = false;
+
+        signaturePad.addEventListener("mousedown", (e) => {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+
+        signaturePad.addEventListener("mousemove", (e) => {
+            if (drawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+
+        signaturePad.addEventListener("mouseup", () => {
+            drawing = false;
+        });
+
+        document.getElementById("clearSignature").addEventListener("click", () => {
+            ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
+        });
+
+        // Gestion du champ d'image
+        const fileUpload = document.getElementById("fileUpload");
+        const imagePreview = document.getElementById("imagePreview");
+
+        fileUpload.addEventListener("change", () => {
+            const files = fileUpload.files;
+            if (files.length > 3) {
+                alert("Vous ne pouvez télécharger que 3 images maximum.");
+                fileUpload.value = ""; // Reset the input field
+                return;
+            }
+            imagePreview.innerHTML = ""; // Clear the preview container
+            Array.from(files).forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
 </body>
 </html>
