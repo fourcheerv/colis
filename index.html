@@ -23,7 +23,7 @@
         }
 
         form {
-            max-width: 600px; /* Augmenter la largeur du formulaire */
+            max-width: 600px;
             width: 90%;
             padding: 20px;
             border: 1px solid #ccc;
@@ -56,7 +56,6 @@
         canvas {
             border: 1px solid #ccc;
             cursor: crosshair;
-            height: 300px;  /* Augmenter la hauteur du canvas */
         }
 
         button {
@@ -81,18 +80,6 @@
             background-color: #c82333;
         }
 
-        .image-preview {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .image-preview img {
-            max-width: 100px;
-            max-height: 100px;
-            object-fit: cover;
-        }
-
         /* Styles Responsive */
         @media (max-width: 768px) {
             form {
@@ -108,7 +95,7 @@
             }
 
             canvas {
-                height: 250px; /* Réduire la hauteur sur les petits écrans */
+                height: 250px; /* Ajuste la taille du canvas pour les petits écrans */
             }
         }
 
@@ -122,7 +109,7 @@
             }
 
             canvas {
-                height: 200px; /* Ajuster encore plus la hauteur pour les très petits écrans */
+                height: 200px; /* Réduit encore la taille du canvas pour les petits écrans */
             }
         }
     </style>
@@ -154,60 +141,57 @@
     </form>
 
     <script>
-        // Gestion de la signature
+        // Gestion du champ signature avec Canvas
         const signaturePad = document.getElementById("signaturePad");
         const ctx = signaturePad.getContext("2d");
-        signaturePad.width = window.innerWidth * 0.9;  // Le canvas prend 90% de la largeur de l'écran
-        signaturePad.height = 300;  // Hauteur augmentée pour plus d'espace
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, signaturePad.width, signaturePad.height);
 
+        // Adapter la taille du canvas
+        signaturePad.width = window.innerWidth * 0.9; // Canvas à 90% de la largeur de l'écran
+        signaturePad.height = 300; // Hauteur fixe du canvas pour avoir un espace suffisant
+
+        // Définir le style de dessin
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#000"; // Couleur noire pour la signature
+        ctx.lineCap = "round"; // Arrondi pour des lignes plus douces
+
+        // Variables pour suivre les mouvements
         let drawing = false;
         let lastX = 0;
         let lastY = 0;
 
-        // Fonction pour dessiner
-        function draw(x, y) {
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
-
-        // Détection du début de dessin (click ou touche)
-        signaturePad.addEventListener("mousedown", startDrawing);
-        signaturePad.addEventListener("touchstart", startDrawing);
-
-        // Détection du mouvement de dessin (drag ou glissement)
-        signaturePad.addEventListener("mousemove", drawOnMove);
-        signaturePad.addEventListener("touchmove", drawOnMove);
-
-        // Détection de la fin du dessin
-        signaturePad.addEventListener("mouseup", stopDrawing);
-        signaturePad.addEventListener("touchend", stopDrawing);
-
-        // Commencer à dessiner
+        // Fonction pour commencer à dessiner
         function startDrawing(e) {
             drawing = true;
-            ctx.beginPath();
             const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
             lastX = offsetX;
             lastY = offsetY;
+            ctx.beginPath();
             ctx.moveTo(lastX, lastY);
         }
 
-        // Dessiner pendant le mouvement
+        // Fonction pour dessiner lors du mouvement
         function drawOnMove(e) {
             if (!drawing) return;
-            e.preventDefault();  // Pour empêcher le défilement de la page lors du glissement
+            e.preventDefault(); // Empêcher le défilement sur mobile
             const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
-            draw(offsetX, offsetY);
+            ctx.lineTo(offsetX, offsetY);
+            ctx.stroke();
             lastX = offsetX;
             lastY = offsetY;
         }
 
-        // Arrêter le dessin
+        // Fonction pour arrêter de dessiner
         function stopDrawing() {
             drawing = false;
         }
+
+        // Attacher les événements
+        signaturePad.addEventListener("mousedown", startDrawing);
+        signaturePad.addEventListener("touchstart", startDrawing);
+        signaturePad.addEventListener("mousemove", drawOnMove);
+        signaturePad.addEventListener("touchmove", drawOnMove);
+        signaturePad.addEventListener("mouseup", stopDrawing);
+        signaturePad.addEventListener("touchend", stopDrawing);
 
         // Effacer la signature
         document.getElementById("clearSignature").addEventListener("click", () => {
@@ -222,10 +206,10 @@
             const files = fileUpload.files;
             if (files.length > 3) {
                 alert("Vous ne pouvez télécharger que 3 images maximum.");
-                fileUpload.value = ""; // Reset the input field
+                fileUpload.value = ""; // Réinitialise le champ de téléchargement
                 return;
             }
-            imagePreview.innerHTML = ""; // Clear the preview container
+            imagePreview.innerHTML = ""; // Efface l'aperçu précédent
             Array.from(files).forEach((file) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
