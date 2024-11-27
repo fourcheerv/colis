@@ -39,7 +39,7 @@
             display: block;
         }
 
-        input, button {
+        input, button, canvas {
             width: 100%;
             margin-bottom: 15px;
         }
@@ -63,6 +63,12 @@
             border-radius: 5px;
         }
 
+        canvas {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
         button {
             padding: 10px;
             background-color: #28a745;
@@ -75,6 +81,14 @@
 
         button:hover {
             background-color: #218838;
+        }
+
+        #clearSignature {
+            background-color: #dc3545;
+        }
+
+        #clearSignature:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
@@ -100,9 +114,14 @@
         <input type="file" id="fileUpload" accept="image/*" capture="camera">
         <div id="imagePreview" class="image-preview"></div>
 
+        <label>Signature :</label>
+        <canvas id="signaturePad" width="600" height="200"></canvas>
+        <button type="button" id="clearSignature">Effacer la signature</button>
+        
         <button type="submit">Valider</button>
     </form>
 
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script>
         // Gestion des images
         const fileUpload = document.getElementById("fileUpload");
@@ -162,6 +181,14 @@
 
             // Réinitialiser le champ de fichier pour permettre d'ajouter une nouvelle image
             fileUpload.value = "";
+        });
+
+        // Gestion de la signature
+        const signatureCanvas = document.getElementById("signaturePad");
+        const signaturePad = new SignaturePad(signatureCanvas);
+
+        document.getElementById("clearSignature").addEventListener("click", () => {
+            signaturePad.clear();
         });
     </script>
 </body>
