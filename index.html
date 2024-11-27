@@ -161,25 +161,55 @@
         signaturePad.height = 200;
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, signaturePad.width, signaturePad.height);
+        
         let drawing = false;
+        let lastX = 0;
+        let lastY = 0;
 
-        signaturePad.addEventListener("mousedown", (e) => {
+        // Fonction pour dessiner
+        function draw(x, y) {
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        // Détection du début de dessin (click ou touche)
+        signaturePad.addEventListener("mousedown", startDrawing);
+        signaturePad.addEventListener("touchstart", startDrawing);
+
+        // Détection du mouvement de dessin (drag ou glissement)
+        signaturePad.addEventListener("mousemove", drawOnMove);
+        signaturePad.addEventListener("touchmove", drawOnMove);
+
+        // Détection de la fin du dessin
+        signaturePad.addEventListener("mouseup", stopDrawing);
+        signaturePad.addEventListener("touchend", stopDrawing);
+        
+        // Commencer à dessiner
+        function startDrawing(e) {
             drawing = true;
             ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
-        });
+            const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
+            lastX = offsetX;
+            lastY = offsetY;
+            ctx.moveTo(lastX, lastY);
+        }
 
-        signaturePad.addEventListener("mousemove", (e) => {
-            if (drawing) {
-                ctx.lineTo(e.offsetX, e.offsetY);
-                ctx.stroke();
-            }
-        });
+        // Dessiner pendant le mouvement
+        function drawOnMove(e) {
+            if (!drawing) return;
+            e.preventDefault();  // Pour empêcher le défilement de la page lors du glissement
+            const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
+            draw(offsetX, offsetY);
+            lastX = offsetX;
+            lastY = offsetY;
+        }
 
-        signaturePad.addEventListener("mouseup", () => {
+        // Arrêter le dessin
+        function stopDrawing() {
             drawing = false;
-        });
+        }
 
+        // Effacer la signature
         document.getElementById("clearSignature").addEventListener("click", () => {
             ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
         });
