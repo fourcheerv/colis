@@ -203,33 +203,6 @@ Nom du réceptionnaire : ${receiverName}
 Nombre de colis : ${packageCount}
 Email : ${email}`);
         });
-//envoi du formulaire avec fetch
-    document.getElementById('packageForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData.entries());
-
-    try {
-        const response = await fetch('http://votre-serveur.com/send-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        if (response.ok) {
-            alert('Email envoyé avec succès!');
-        } else {
-            alert('Échec de l\'envoi de l\'email.');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Une erreur s\'est produite.');
-    }
-});
-
     </script>
 </body>
 </html>
