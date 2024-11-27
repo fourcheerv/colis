@@ -128,8 +128,13 @@
         <label for="packageCount">Nombre de colis :</label>
         <input type="number" id="packageCount" name="packageCount" min="1" required>
         
-        <label for="email">Adresse email :</label>
-        <input type="email" id="email" name="email" required>
+        <form id="packageForm" method="POST" action="http://votre-serveur.com/send-email">
+            <!-- Les champs restent identiques -->
+            <label for="email">Adresse email :</label>
+            <input type="email" id="email" name="email" required>
+            <!-- Autres champs -->
+            <button type="submit">Valider</button>
+        </form>
         
         <label for="fileUpload">Télécharger une image :</label>
         <input type="file" id="fileUpload" accept="image/*">
@@ -140,6 +145,8 @@
         
         <button type="submit">Valider</button>
     </form>
+ 
+    
 
     <script>
         // Gérer la signature
@@ -200,6 +207,33 @@ Nom du réceptionnaire : ${receiverName}
 Nombre de colis : ${packageCount}
 Email : ${email}`);
         });
+//envoi du formulaire avec fetch
+    document.getElementById('packageForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        const response = await fetch('http://votre-serveur.com/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+            alert('Email envoyé avec succès!');
+        } else {
+            alert('Échec de l\'envoi de l\'email.');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Une erreur s\'est produite.');
+    }
+});
+
     </script>
 </body>
 </html>
