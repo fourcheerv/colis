@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulaire de Réception de Colis</title>
     <style>
-        /* Style CSS inchangé pour la mise en page */
+        /* Styles CSS pour la mise en page */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -39,7 +39,7 @@
             display: block;
         }
 
-        input, canvas, button {
+        input, button {
             width: 100%;
             margin-bottom: 15px;
         }
@@ -57,7 +57,6 @@
 
         canvas {
             border: 1px solid #ccc;
-            cursor: crosshair;
             background-color: #fff;
         }
 
@@ -115,59 +114,25 @@
         <div id="imagePreview" class="image-preview"></div>
 
         <label>Signature :</label>
-        <canvas id="signaturePad" style="width: 100%; height: 300px;"></canvas>
+        <canvas id="signaturePad" width="500" height="200"></canvas>
         <button type="button" id="clearSignature">Effacer la signature</button>
         
         <button type="submit">Valider</button>
     </form>
 
+    <!-- Importation de la bibliothèque Signature Pad -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script>
-        // Gestion du champ signature avec Canvas
-        const signaturePad = document.getElementById("signaturePad");
-        const ctx = signaturePad.getContext("2d");
+        // Initialisation de Signature Pad
+        const canvas = document.getElementById('signaturePad');
+        const signaturePad = new SignaturePad(canvas);
 
-        // Adapter la taille du canvas
-        signaturePad.width = signaturePad.offsetWidth;
-        signaturePad.height = 300;
-
-        // Définir le style de dessin
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "#000";
-        ctx.lineCap = "round";
-
-        let drawing = false;
-
-        const startDrawing = (e) => {
-            drawing = true;
-            const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
-            ctx.beginPath();
-            ctx.moveTo(offsetX, offsetY);
-        };
-
-        const drawOnMove = (e) => {
-            if (!drawing) return;
-            e.preventDefault();
-            const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
-            ctx.lineTo(offsetX, offsetY);
-            ctx.stroke();
-        };
-
-        const stopDrawing = () => {
-            drawing = false;
-        };
-
-        signaturePad.addEventListener("mousedown", startDrawing);
-        signaturePad.addEventListener("touchstart", startDrawing);
-        signaturePad.addEventListener("mousemove", drawOnMove);
-        signaturePad.addEventListener("touchmove", drawOnMove);
-        signaturePad.addEventListener("mouseup", stopDrawing);
-        signaturePad.addEventListener("touchend", stopDrawing);
-
-        document.getElementById("clearSignature").addEventListener("click", () => {
-            ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
+        // Bouton pour effacer la signature
+        document.getElementById('clearSignature').addEventListener('click', () => {
+            signaturePad.clear();
         });
 
-        // Gestion des images
+        // Prévisualisation des images téléchargées
         const fileUpload = document.getElementById("fileUpload");
         const imagePreview = document.getElementById("imagePreview");
 
@@ -186,6 +151,14 @@
                     reader.readAsDataURL(file);
                 }
             });
+        });
+
+        // Validation du formulaire : Vérifier si la signature est vide
+        document.getElementById('packageForm').addEventListener('submit', (e) => {
+            if (signaturePad.isEmpty()) {
+                e.preventDefault();
+                alert('Veuillez signer avant de soumettre le formulaire.');
+            }
         });
     </script>
 </body>
