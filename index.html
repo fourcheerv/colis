@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire de Réception de Colis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        input, label, canvas, button {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            height: 200px;
+            cursor: crosshair;
+        }
+        button {
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Formulaire de Réception de Colis</h1>
+    <form id="packageForm">
+        <label for="recipientName">Nom du destinataire :</label>
+        <input type="text" id="recipientName" name="recipientName" required>
+        
+        <label for="receiverName">Nom du réceptionnaire :</label>
+        <input type="text" id="receiverName" name="receiverName" required>
+        
+        <label for="packageCount">Nombre de colis :</label>
+        <input type="number" id="packageCount" name="packageCount" min="1" required>
+        
+        <label for="email">Adresse email :</label>
+        <input type="email" id="email" name="email" required>
+        
+        <label for="fileUpload">Télécharger une image :</label>
+        <input type="file" id="fileUpload" accept="image/*">
+        
+        <label>Signature :</label>
+        <canvas id="signaturePad"></canvas>
+        <button type="button" id="clearSignature">Effacer la signature</button>
+        
+        <button type="submit">Valider</button>
+    </form>
+
+    <script>
+        // Gérer la signature
+        const canvas = document.getElementById('signaturePad');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mousemove', draw);
+        
+        function draw(event) {
+            if (!isDrawing) return;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'black';
+            ctx.lineTo(event.offsetX, event.offsetY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(event.offsetX, event.offsetY);
+        }
+
+        document.getElementById('clearSignature').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // Formulaire : Gérer la soumission
+        document.getElementById('packageForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const file = document.getElementById('fileUpload').files[0];
+
+            if (file) {
+                alert('Image téléchargée : ' + file.name);
+            } else {
+                alert('Veuillez télécharger une image.');
+            }
+
+            const recipientName = formData.get('recipientName');
+            const receiverName = formData.get('receiverName');
+            const packageCount = formData.get('packageCount');
+            const email = formData.get('email');
+
+            alert(`Formulaire soumis avec succès !
+Nom du destinataire : ${recipientName}
+Nom du réceptionnaire : ${receiverName}
+Nombre de colis : ${packageCount}
+Email : ${email}`);
+        });
+    </script>
+</body>
+</html>
