@@ -9,30 +9,28 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             background: #f4f4f9;
+            display: flex;
+            flex-direction: column; /* Arrange les éléments verticalement */
+            align-items: center; /* Centre les éléments horizontalement */
+        }
+
+        h1 {
+            text-align: center; /* Centre le texte dans le conteneur */
+            margin: 20px 0; /* Espacement avec le haut et le formulaire */
+            font-size: 1.8em;
+            color: #333;
         }
 
         form {
             max-width: 500px;
             width: 90%;
-            margin: 20px auto;
             padding: 20px;
             border: 1px solid #ccc;
             border-radius: 10px;
             background: #ffffff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        h1 {
-            text-align: center;
-            margin-top: 20px; /* Espacement avec le haut de la page */
-            font-size: 1.8em;
-            color: #333;
-        }    
 
         label {
             font-weight: bold;
@@ -141,68 +139,5 @@
         
         <button type="submit">Valider</button>
     </form>
- 
-    
-
-    <script>
-        // Gérer la signature
-        const canvas = document.getElementById('signaturePad');
-        const ctx = canvas.getContext('2d');
-        let isDrawing = false;
-
-        function resizeCanvas() {
-            const width = canvas.parentElement.clientWidth;
-            canvas.width = width;
-            canvas.height = width * 0.5; // Ratio pour signature
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Réinitialise la signature
-        }
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas(); // Initial resize
-
-        canvas.addEventListener('mousedown', () => isDrawing = true);
-        canvas.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('mousemove', draw);
-        
-        function draw(event) {
-            if (!isDrawing) return;
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = 'black';
-            ctx.lineTo(event.offsetX, event.offsetY);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(event.offsetX, event.offsetY);
-        }
-
-        document.getElementById('clearSignature').addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
-
-        // Formulaire : Gérer la soumission
-        document.getElementById('packageForm').addEventListener('submit', (event) => {
-            event.preventDefault();
-
-            const formData = new FormData(event.target);
-            const file = document.getElementById('fileUpload').files[0];
-
-            if (file) {
-                alert('Image téléchargée : ' + file.name);
-            } else {
-                alert('Veuillez télécharger une image.');
-            }
-
-            const recipientName = formData.get('recipientName');
-            const receiverName = formData.get('receiverName');
-            const packageCount = formData.get('packageCount');
-            const email = formData.get('email');
-
-            alert(`Formulaire soumis avec succès !
-Nom du destinataire : ${recipientName}
-Nom du réceptionnaire : ${receiverName}
-Nombre de colis : ${packageCount}
-Email : ${email}`);
-        });
-    </script>
 </body>
 </html>
