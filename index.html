@@ -7,28 +7,59 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f4f4f9;
         }
+
         form {
             max-width: 500px;
-            margin: auto;
+            width: 90%;
+            margin: 20px auto;
             padding: 20px;
             border: 1px solid #ccc;
             border-radius: 10px;
-            background: #f9f9f9;
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        input, label, canvas, button {
+
+        h1 {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input, canvas, button {
             width: 100%;
             margin-bottom: 15px;
         }
-        input[type="file"] {
-            margin-bottom: 10px;
+
+        input[type="file"],
+        input[type="number"],
+        input[type="email"],
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
+
         canvas {
             border: 1px solid #ccc;
             height: 200px;
             cursor: crosshair;
         }
+
         button {
             padding: 10px;
             background-color: #28a745;
@@ -36,9 +67,52 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 1em;
         }
+
         button:hover {
             background-color: #218838;
+        }
+
+        #clearSignature {
+            background-color: #dc3545;
+        }
+
+        #clearSignature:hover {
+            background-color: #c82333;
+        }
+
+        /* Styles Responsive */
+        @media (max-width: 768px) {
+            form {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.2em;
+            }
+
+            input, canvas, button {
+                font-size: 0.9em;
+            }
+
+            canvas {
+                height: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1em;
+            }
+
+            input, canvas, button {
+                font-size: 0.8em;
+            }
+
+            canvas {
+                height: 120px;
+            }
         }
     </style>
 </head>
@@ -72,6 +146,16 @@
         const canvas = document.getElementById('signaturePad');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
+
+        function resizeCanvas() {
+            const width = canvas.parentElement.clientWidth;
+            canvas.width = width;
+            canvas.height = width * 0.5; // Ratio pour signature
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Réinitialise la signature
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial resize
 
         canvas.addEventListener('mousedown', () => isDrawing = true);
         canvas.addEventListener('mouseup', () => isDrawing = false);
