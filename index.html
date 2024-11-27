@@ -95,7 +95,7 @@
             }
 
             canvas {
-                height: 250px; /* Ajuste la taille du canvas pour les petits écrans */
+                height: 250px;
             }
         }
 
@@ -109,7 +109,7 @@
             }
 
             canvas {
-                height: 200px; /* Réduit encore la taille du canvas pour les petits écrans */
+                height: 200px;
             }
         }
     </style>
@@ -146,20 +146,18 @@
         const ctx = signaturePad.getContext("2d");
 
         // Adapter la taille du canvas
-        signaturePad.width = window.innerWidth * 0.9; // Canvas à 90% de la largeur de l'écran
-        signaturePad.height = 300; // Hauteur fixe du canvas pour avoir un espace suffisant
+        signaturePad.width = window.innerWidth * 0.9;
+        signaturePad.height = 300;
 
         // Définir le style de dessin
         ctx.lineWidth = 3;
-        ctx.strokeStyle = "#000"; // Couleur noire pour la signature
-        ctx.lineCap = "round"; // Arrondi pour des lignes plus douces
+        ctx.strokeStyle = "#000";
+        ctx.lineCap = "round";
 
-        // Variables pour suivre les mouvements
         let drawing = false;
         let lastX = 0;
         let lastY = 0;
 
-        // Fonction pour commencer à dessiner
         function startDrawing(e) {
             drawing = true;
             const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
@@ -169,10 +167,9 @@
             ctx.moveTo(lastX, lastY);
         }
 
-        // Fonction pour dessiner lors du mouvement
         function drawOnMove(e) {
             if (!drawing) return;
-            e.preventDefault(); // Empêcher le défilement sur mobile
+            e.preventDefault();
             const { offsetX, offsetY } = e.type.includes('touch') ? e.touches[0] : e;
             ctx.lineTo(offsetX, offsetY);
             ctx.stroke();
@@ -180,12 +177,10 @@
             lastY = offsetY;
         }
 
-        // Fonction pour arrêter de dessiner
         function stopDrawing() {
             drawing = false;
         }
 
-        // Attacher les événements
         signaturePad.addEventListener("mousedown", startDrawing);
         signaturePad.addEventListener("touchstart", startDrawing);
         signaturePad.addEventListener("mousemove", drawOnMove);
@@ -193,12 +188,38 @@
         signaturePad.addEventListener("mouseup", stopDrawing);
         signaturePad.addEventListener("touchend", stopDrawing);
 
-        // Effacer la signature
         document.getElementById("clearSignature").addEventListener("click", () => {
             ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
         });
 
-        // Gestion du champ d'image
+        // Fonction pour redimensionner les images avant de les afficher
+        function resizeImage(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function () {
+                    // Créer un canvas pour redimensionner l'image
+                    const canvas = document.createElement('canvas');
+                    const maxWidth = 150;
+                    const ratio = img.width / img.height;
+                    let width = maxWidth;
+                    let height = width / ratio;
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convertir l'image redimensionnée en base64
+                    callback(canvas.toDataURL());
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Gestion du champ d'image avec redimensionnement
         const fileUpload = document.getElementById("fileUpload");
         const imagePreview = document.getElementById("imagePreview");
 
@@ -206,18 +227,17 @@
             const files = fileUpload.files;
             if (files.length > 3) {
                 alert("Vous ne pouvez télécharger que 3 images maximum.");
-                fileUpload.value = ""; // Réinitialise le champ de téléchargement
+                fileUpload.value = "";
                 return;
             }
-            imagePreview.innerHTML = ""; // Efface l'aperçu précédent
+
+            imagePreview.innerHTML = "";
             Array.from(files).forEach((file) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
+                resizeImage(file, function (resizedImage) {
                     const img = document.createElement("img");
-                    img.src = e.target.result;
+                    img.src = resizedImage;
                     imagePreview.appendChild(img);
-                };
-                reader.readAsDataURL(file);
+                });
             });
         });
     </script>
