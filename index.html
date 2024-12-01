@@ -96,23 +96,15 @@
                         ctx.drawImage(img, 0, 0, width, height);
 
                         // Convertir l'image en base64
-                        canvas.toDataURL("image/jpeg", 0.8, (dataUrl) => {
-                            // Créer un fichier à partir du Data URL
-                            const data = dataUrl.split(',')[1];
-                            const binary = atob(data);
-                            const array = [];
-                            for (let i = 0; i < binary.length; i++) {
-                                array.push(binary.charCodeAt(i));
-                            }
-                            const compressedFile = new Blob([new Uint8Array(array)], { type: 'image/jpeg' });
+                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.8);
 
-                            // Vérifier si la taille est inférieure à 1 Mo
-                            if (compressedFile.size <= 1024 * 1024) {
-                                resolve(compressedFile);
-                            } else {
-                                reject("L'image est trop grande même après compression.");
-                            }
-                        });
+                        // Vérifier si la taille est inférieure à 1 Mo
+                        const compressedBlob = dataURLToBlob(compressedDataUrl);
+                        if (compressedBlob.size <= 1024 * 1024) {
+                            resolve(compressedDataUrl); // Renvoi de l'image compressée
+                        } else {
+                            reject("L'image est trop grande même après compression.");
+                        }
                     };
                     img.src = event.target.result;
                 };
@@ -120,24 +112,30 @@
             });
         };
 
+        // Fonction pour convertir un Data URL en Blob
+        const dataURLToBlob = (dataUrl) => {
+            const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while (n--) u8arr[n] = bstr.charCodeAt(n);
+            return new Blob([u8arr], { type: mime });
+        };
+
         // Gestion des images
         fileUpload.addEventListener("change", async () => {
             const file = fileUpload.files[0];
             if (file && file.type.startsWith("image/")) {
                 try {
-                    const compressedFile = await compressImage(file);
-                    imageFiles.push(compressedFile);
+                    // Compression de l'image
+                    const compressedDataUrl = await compressImage(file);
+                    imageFiles.push(compressedDataUrl);
 
-                    // Afficher un aperçu
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = document.createElement("img");
-                        img.src = e.target.result;
-                        img.style.maxWidth = "200px";
-                        img.style.margin = "5px";
-                        imagePreview.appendChild(img);
-                    };
-                    reader.readAsDataURL(compressedFile);
+                    // Afficher un aperçu de l'image compressée
+                    const img = document.createElement("img");
+                    img.src = compressedDataUrl;
+                    img.style.maxWidth = "200px";
+                    img.style.margin = "5px";
+                    imagePreview.appendChild(img);
+
                 } catch (error) {
                     alert("Erreur lors de la compression de l'image: " + error);
                 }
@@ -207,18 +205,8 @@
                 deliveryDate: formData.get("deliveryDate"),
                 delivered: formData.get("delivered"),
                 signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL("image/jpeg"),
-                photos: [],
+                photos: imageFiles,
             };
-
-            // Ajouter les photos comme Data URLs
-            for (let file of imageFiles) {
-                const dataURL = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
-                });
-                data.photos.push(dataURL);
-            }
 
             if (!data.signature) {
                 alert("Veuillez fournir une signature !");
@@ -233,4 +221,12 @@
             signaturePad.clear();
         });
 
-       
+        // Vider les champs du formulaire
+        document.getElementById("clearForm").addEventListener("click", () => {
+            document.getElementById("packageForm").reset();
+            imagePreview.innerHTML = ''; // Effacer la prévisualisation des images
+            signaturePad.clear(); // Effacer la signature
+        });
+    </script>
+</body>
+</html>
