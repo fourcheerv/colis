@@ -13,8 +13,9 @@
 </head>
 <body>
     <h1>Gestion des Données IndexedDB</h1>
-    <!-- Formulaire de recherche -->
+    <!-- Formulaire de recherche avec bouton de recherche -->
     <input type="text" id="searchInput" placeholder="Rechercher par nom, email ou ID" />
+    <button id="searchBtn">Rechercher</button>
     <button id="loadDataBtn">Charger les données</button>
     <button id="exportBtn">Exporter vers Excel</button>
     <button id="exportZipBtn">Exporter sous forme de ZIP</button>
@@ -224,7 +225,7 @@
             const checkboxes = document.querySelectorAll(".selectRow");
             checkboxes.forEach((checkbox) => checkbox.checked = document.getElementById("selectAll").checked);
         });
-        document.getElementById("searchInput").addEventListener("input", searchData);
+        document.getElementById("searchBtn").addEventListener("click", searchData);  // Bouton de recherche
     </script>
 </body>
 </html>
