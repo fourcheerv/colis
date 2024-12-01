@@ -13,7 +13,8 @@
 </head>
 <body>
     <h1>Gestion des Données IndexedDB</h1>
-    <!-- Boutons de gestion -->
+    <!-- Formulaire de recherche -->
+    <input type="text" id="searchInput" placeholder="Rechercher par nom, email ou ID" />
     <button id="loadDataBtn">Charger les données</button>
     <button id="exportBtn">Exporter vers Excel</button>
     <button id="exportZipBtn">Exporter sous forme de ZIP</button>
@@ -100,10 +101,25 @@
 
                 alert("Données chargées avec succès !");
             };
+        };
 
-            request.onerror = (event) => {
-                console.error("Erreur lors du chargement des données :", event.target.error);
-            };
+        // Fonction de recherche
+        const searchData = () => {
+            const searchValue = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#dataTable tbody tr");
+            rows.forEach((row) => {
+                const cells = row.getElementsByTagName("td");
+                const id = cells[1].innerText.toLowerCase();
+                const recipientName = cells[2].innerText.toLowerCase();
+                const receiverName = cells[3].innerText.toLowerCase();
+                const email = cells[4].innerText.toLowerCase();
+
+                if (id.includes(searchValue) || recipientName.includes(searchValue) || receiverName.includes(searchValue) || email.includes(searchValue)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
         };
 
         // Supprimer les éléments sélectionnés
@@ -199,6 +215,7 @@
             };
         };
 
+        // Écouteurs d'événements
         document.getElementById("loadDataBtn").addEventListener("click", loadData);
         document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
         document.getElementById("exportBtn").addEventListener("click", exportToExcel);
@@ -207,6 +224,7 @@
             const checkboxes = document.querySelectorAll(".selectRow");
             checkboxes.forEach((checkbox) => checkbox.checked = document.getElementById("selectAll").checked);
         });
+        document.getElementById("searchInput").addEventListener("input", searchData);
     </script>
 </body>
 </html>
