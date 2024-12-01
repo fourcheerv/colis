@@ -49,7 +49,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 1em;
-            margin: 10px 0;
+            margin: 10px 5px;
         }
 
         button:hover {
@@ -63,15 +63,39 @@
         #exportBtn:hover {
             background: #0056b3;
         }
+
+        #deleteDBBtn {
+            background: #dc3545;
+        }
+
+        #deleteDBBtn:hover {
+            background: #c82333;
+        }
+
+        #deleteSelectedBtn {
+            background: #ffc107;
+            color: black;
+        }
+
+        #deleteSelectedBtn:hover {
+            background: #e0a800;
+        }
+
+        .checkbox {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <h1>Gestion des Données IndexedDB</h1>
     <button id="loadDataBtn">Charger les données</button>
     <button id="exportBtn">Exporter vers Excel</button>
+    <button id="deleteDBBtn">Supprimer la base de données</button>
+    <button id="deleteSelectedBtn">Supprimer les éléments sélectionnés</button>
     <table id="dataTable">
         <thead>
             <tr>
+                <th><input type="checkbox" id="selectAll"></th>
                 <th>ID</th>
                 <th>Nom du destinataire</th>
                 <th>Nom du réceptionnaire</th>
@@ -133,6 +157,7 @@
                 data.forEach((item) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
+                        <td class="checkbox"><input type="checkbox" class="selectRow" data-id="${item.id}"></td>
                         <td>${item.id}</td>
                         <td>${item.recipientName}</td>
                         <td>${item.receiverName}</td>
@@ -162,45 +187,49 @@
             };
         };
 
-        // Exporter les données au format Excel
-        const exportToExcel = () => {
-            const transaction = db.transaction(["receptions"], "readonly");
+        // Supprimer les éléments sélectionnés
+        const deleteSelected = () => {
+            const checkboxes = document.querySelectorAll(".selectRow:checked");
+            if (checkboxes.length === 0) {
+                alert("Aucun élément sélectionné !");
+                return;
+            }
+
+            const idsToDelete = Array.from(checkboxes).map((checkbox) => Number(checkbox.dataset.id));
+            const transaction = db.transaction(["receptions"], "readwrite");
             const objectStore = transaction.objectStore("receptions");
-            const request = objectStore.getAll();
 
-            request.onsuccess = () => {
-                const data = request.result;
+            idsToDelete.forEach((id) => {
+                const request = objectStore.delete(id);
 
-                // Créer des données Excel à partir des données
-                const excelData = data.map((item) => ({
-                    ID: item.id,
-                    Destinataire: item.recipientName,
-                    Réceptionnaire: item.receiverName,
-                    Email: item.email,
-                    "Nombre de colis": item.packageCount,
-                    Date: item.deliveryDate,
-                    Signature: "Signature incluse",
-                    Photos: `Photos incluses (${item.photos.length})`,
-                }));
+                request.onsuccess = () => {
+                    console.log(`Élément avec ID ${id} supprimé.`);
+                };
 
-                // Convertir en feuille Excel
-                const worksheet = XLSX.utils.json_to_sheet(excelData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Receptions");
+                request.onerror = (event) => {
+                    console.error(`Erreur lors de la suppression de l'élément avec ID ${id} :`, event.target.error);
+                };
+            });
 
-                // Générer et télécharger le fichier Excel
-                XLSX.writeFile(workbook, "Données_Reception.xlsx");
-                alert("Fichier Excel exporté avec succès !");
+            transaction.oncomplete = () => {
+                alert("Éléments sélectionnés supprimés avec succès !");
+                loadData(); // Recharger les données pour mettre à jour le tableau
             };
+        };
 
-            request.onerror = (event) => {
-                console.error("Erreur lors de l'exportation :", event.target.error);
-            };
+        // Sélectionner/Désélectionner toutes les lignes
+        const toggleSelectAll = () => {
+            const selectAllCheckbox = document.getElementById("selectAll");
+            const checkboxes = document.querySelectorAll(".selectRow");
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
         };
 
         // Écouteurs d'événements
         document.getElementById("loadDataBtn").addEventListener("click", loadData);
-        document.getElementById("exportBtn").addEventListener("click", exportToExcel);
+        document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
+        document.getElementById("selectAll").addEventListener("click", toggleSelectAll);
     </script>
 </body>
 </html>
