@@ -3,220 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulaire de Réception de Colis</title>
-    <style>
-        /* Styles pour la page */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f4f4f9;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 {
-            text-align: center;
-            margin: 20px 0;
-            font-size: 1.8em;
-            color: #333;
-        }
-
-        form {
-            max-width: 600px;
-            width: 90%;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            background: #ffffff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        label {
-            font-weight: bold;
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        input, button, canvas {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        input[type="file"],
-        input[type="number"],
-        input[type="email"],
-        input[type="text"],
-        input[type="datetime-local"] {
-            padding: 10px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        #imagePreview img {
-            max-width: 100%;
-            max-height: 200px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        canvas {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-        }
-
-        button {
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        #clearSignature {
-            background-color: #dc3545;
-        }
-
-        #clearSignature:hover {
-            background-color: #c82333;
-        }
-
-        /* Alignement des boutons radio */
-        .radio-group {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .radio-group label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .radio-group input[type="radio"] {
-            width: auto;
-            margin: 0;
-        }
-    </style>
+    <title>IndexedDB Formulaire</title>
 </head>
 <body>
-    <h1>Formulaire de Réception de Colis</h1>
-    <form id="packageForm" method="POST" action="http://votre-serveur.com/send-email">
+    <h1>Formulaire avec sauvegarde IndexedDB</h1>
+    <form id="packageForm">
         <label for="recipientName">Nom du destinataire :</label>
         <input type="text" id="recipientName" name="recipientName" required>
-        
+
         <label for="receiverName">Nom du réceptionnaire :</label>
         <input type="text" id="receiverName" name="receiverName" required>
-        
+
         <label for="packageCount">Nombre de colis :</label>
         <input type="number" id="packageCount" name="packageCount" min="1" required>
-        
+
         <label for="email">Adresse email :</label>
         <input type="email" id="email" name="email" required>
-        
+
         <label for="deliveryDate">Date et Heure de réception :</label>
         <input type="datetime-local" id="deliveryDate" name="deliveryDate" required>
-        
+
         <label for="fileUpload">Prendre une photo :</label>
         <input type="file" id="fileUpload" accept="image/*" capture="camera">
-        <div id="imagePreview" class="image-preview"></div>
+        <div id="imagePreview"></div>
 
         <label>Signature :</label>
         <canvas id="signaturePad" width="500" height="200"></canvas>
         <button type="button" id="clearSignature">Effacer la signature</button>
 
-        <p>Colis Livré :</p>
-        <div class="radio-group">
-            <label>
-                <input type="radio" id="trueRadio" name="delivered" value="true" />
-                Oui
-            </label>
-            <label>
-                <input type="radio" id="falseRadio" name="delivered" value="false" />
-                Non
-            </label>
-        </div>
-        
-        <button type="submit">Valider</button>
+        <button type="submit">Sauvegarder avec IndexedDB</button>
     </form>
 
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script>
-        // Gestion des images
         const fileUpload = document.getElementById("fileUpload");
         const imagePreview = document.getElementById("imagePreview");
-        let imageCount = 0; // Nombre d'images déjà ajoutées
-        const maxImages = 3; // Limite des images autorisées
-
-        fileUpload.addEventListener("change", () => {
-            if (imageCount >= maxImages) {
-                alert("Vous ne pouvez pas ajouter plus de 3 images.");
-                return;
-            }
-
-            const file = fileUpload.files[0];
-            if (!file || !file.type.startsWith("image/")) return;
-
-            // Lire et redimensionner l'image
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-
-                img.onload = () => {
-                    // Créer un canvas pour redimensionner l'image
-                    const canvas = document.createElement("canvas");
-                    const maxWidth = 800; // Largeur maximale
-                    const maxHeight = 800; // Hauteur maximale
-
-                    let width = img.width;
-                    let height = img.height;
-
-                    // Calcul du ratio pour redimensionner
-                    if (width > maxHeight && width > maxWidth) {
-                        height = (height * maxWidth) / width;
-                        width = maxWidth;
-                    } else if (height > width && height > maxHeight) {
-                        width = (width * maxHeight) / height;
-                        height = maxHeight;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Ajouter l'image redimensionnée à l'aperçu
-                    const previewImage = document.createElement("img");
-                    previewImage.src = canvas.toDataURL("image/jpeg");
-                    imagePreview.appendChild(previewImage);
-
-                    // Augmenter le compteur d'images
-                    imageCount++;
-                };
-            };
-            reader.readAsDataURL(file);
-
-            // Réinitialiser le champ de fichier pour permettre d'ajouter une nouvelle image
-            fileUpload.value = "";
-        });
-
-        // Gestion de la signature
         const signatureCanvas = document.getElementById("signaturePad");
         const signaturePad = new SignaturePad(signatureCanvas);
 
+        let imageFiles = []; // Stockage temporaire des images
+
+        // Gestion des images
+        fileUpload.addEventListener("change", () => {
+            const file = fileUpload.files[0];
+            if (file && file.type.startsWith("image/")) {
+                imageFiles.push(file);
+
+                // Afficher un aperçu
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.style.maxWidth = "200px";
+                    img.style.margin = "5px";
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+            fileUpload.value = "";
+        });
+
+        // Initialiser IndexedDB
+        const dbName = "ReceptionDB";
+        let db;
+
+        const openDB = () => {
+            const request = indexedDB.open(dbName, 1);
+
+            request.onupgradeneeded = (event) => {
+                db = event.target.result;
+
+                // Créer un object store pour les données de réception
+                if (!db.objectStoreNames.contains("receptions")) {
+                    const objectStore = db.createObjectStore("receptions", {
+                        keyPath: "id",
+                        autoIncrement: true,
+                    });
+
+                    objectStore.createIndex("email", "email", { unique: false });
+                }
+            };
+
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                console.log("IndexedDB est prêt !");
+            };
+
+            request.onerror = (event) => {
+                console.error("Erreur avec IndexedDB :", event.target.error);
+            };
+        };
+
+        openDB();
+
+        // Sauvegarder dans IndexedDB
+        const saveToIndexedDB = (data) => {
+            const transaction = db.transaction(["receptions"], "readwrite");
+            const objectStore = transaction.objectStore("receptions");
+
+            const request = objectStore.add(data);
+            request.onsuccess = () => {
+                alert("Données sauvegardées dans IndexedDB !");
+            };
+
+            request.onerror = (event) => {
+                console.error("Erreur lors de l'ajout :", event.target.error);
+            };
+        };
+
+        // Gestion de la soumission du formulaire
+        document.getElementById("packageForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+
+            // Collecter les données
+            const data = {
+                recipientName: formData.get("recipientName"),
+                receiverName: formData.get("receiverName"),
+                packageCount: formData.get("packageCount"),
+                email: formData.get("email"),
+                deliveryDate: formData.get("deliveryDate"),
+                delivered: formData.get("delivered"),
+                signature: signaturePad.toDataURL("image/jpeg"),
+                photos: [],
+            };
+
+            // Ajouter les photos comme Data URLs
+            for (let file of imageFiles) {
+                const dataURL = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                });
+                data.photos.push(dataURL);
+            }
+
+            saveToIndexedDB(data);
+        });
+
+        // Effacer la signature
         document.getElementById("clearSignature").addEventListener("click", () => {
             signaturePad.clear();
         });
