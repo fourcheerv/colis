@@ -59,22 +59,49 @@
 
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script>
-        const fileUpload = document.getElementById("fileUpload");
-        const imagePreview = document.getElementById("imagePreview");
-        const signatureCanvas = document.getElementById("signaturePad");
-        const signaturePad = new SignaturePad(signatureCanvas, {
-            backgroundColor: '#fff' // Ajout d'un fond blanc à la signature
-        });
 
-        let imageFiles = []; // Stockage temporaire des images
+    document.addEventListener("DOMContentLoaded", () => {
+    const fileUpload = document.getElementById("fileUpload");
+    const imagePreview = document.getElementById("imagePreview");
+    const signatureCanvas = document.getElementById("signaturePad");
+    const signaturePad = new SignaturePad(signatureCanvas, {
+        backgroundColor: '#fff', // Ajout d'un fond blanc pour éviter les transparences
+    });
 
-        // Gestion des images
-        fileUpload.addEventListener("change", () => {
-            const file = fileUpload.files[0];
-            if (file && file.type.startsWith("image/")) {
-                imageFiles.push(file);
+    let imageFiles = []; // Stockage temporaire des images compressées
 
-                // Afficher un aperçu
+    // Fonction pour afficher les messages d'erreur
+    function afficherErreur(idChamp, message) {
+        const errorElement = document.getElementById(idChamp + "Error");
+        if (errorElement) errorElement.innerText = message;
+    }
+
+    // Compression des images avant affichage et stockage
+    function compresserImage(file, callback) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                canvas.width = 800; // Largeur maximum
+                canvas.height = (img.height / img.width) * 800; // Hauteur proportionnelle
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(callback, "image/jpeg", 0.7); // Compression JPEG
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Gestion de l'aperçu des images
+    fileUpload.addEventListener("change", () => {
+        const file = fileUpload.files[0];
+        if (file && file.type.startsWith("image/")) {
+            compresserImage(file, (compressedBlob) => {
+                imageFiles.push(compressedBlob);
+
+                // Aperçu des images
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement("img");
@@ -83,108 +110,140 @@
                     img.style.margin = "5px";
                     imagePreview.appendChild(img);
                 };
-                reader.readAsDataURL(file);
-            }
-            fileUpload.value = "";
-        });
+                reader.readAsDataURL(compressedBlob);
+            });
+        }
+        fileUpload.value = ""; // Réinitialiser l'input file
+    });
 
-        // Initialiser IndexedDB
-        const dbName = "ReceptionDB";
-        let db;
+    // Initialisation IndexedDB
+    const dbName = "ReceptionDB";
+    let db;
 
-        const openDB = () => {
-            const request = indexedDB.open(dbName, 1);
+    const openDB = () => {
+        const request = indexedDB.open(dbName, 1);
 
-            request.onupgradeneeded = (event) => {
-                db = event.target.result;
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
 
-                // Créer un object store pour les données de réception
-                if (!db.objectStoreNames.contains("receptions")) {
-                    const objectStore = db.createObjectStore("receptions", {
-                        keyPath: "id",
-                        autoIncrement: true,
-                    });
-
-                    objectStore.createIndex("email", "email", { unique: false });
-                }
-            };
-
-            request.onsuccess = (event) => {
-                db = event.target.result;
-                console.log("IndexedDB est prêt !");
-            };
-
-            request.onerror = (event) => {
-                console.error("Erreur avec IndexedDB :", event.target.error);
-            };
-        };
-
-        openDB();
-
-        // Sauvegarder dans IndexedDB
-        const saveToIndexedDB = (data) => {
-            const transaction = db.transaction(["receptions"], "readwrite");
-            const objectStore = transaction.objectStore("receptions");
-
-            const request = objectStore.add(data);
-            request.onsuccess = () => {
-                alert("Données sauvegardées dans IndexedDB !");
-                document.getElementById("clearForm").click(); // Réinitialiser le formulaire après sauvegarde
-            };
-
-            request.onerror = (event) => {
-                console.error("Erreur lors de l'ajout :", event.target.error);
-            };
-        };
-
-        // Gestion de la soumission du formulaire
-        document.getElementById("packageForm").addEventListener("submit", async (event) => {
-            event.preventDefault();
-
-            const formData = new FormData(event.target);
-
-            // Collecter les données
-            const data = {
-                recipientName: formData.get("recipientName"),
-                receiverName: formData.get("receiverName"),
-                packageCount: formData.get("packageCount"),
-                email: formData.get("email"),
-                deliveryDate: formData.get("deliveryDate"),
-                delivered: formData.get("delivered"),
-                signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL("image/jpeg"),
-                photos: [],
-            };
-
-            // Ajouter les photos comme Data URLs
-            for (let file of imageFiles) {
-                const dataURL = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
+            // Créer un ObjectStore pour stocker les données de réception
+            if (!db.objectStoreNames.contains("receptions")) {
+                const objectStore = db.createObjectStore("receptions", {
+                    keyPath: "id",
+                    autoIncrement: true,
                 });
-                data.photos.push(dataURL);
+
+                objectStore.createIndex("email", "email", { unique: false });
             }
+        };
 
-            if (!data.signature) {
-                alert("Veuillez fournir une signature !");
-                return;
-            }
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            console.log("IndexedDB est prêt !");
+        };
 
-            saveToIndexedDB(data);
-        });
+        request.onerror = (event) => {
+            console.error("Erreur avec IndexedDB :", event.target.error);
+        };
+    };
 
-        // Effacer la signature
-        document.getElementById("clearSignature").addEventListener("click", () => {
-            signaturePad.clear();
-        });
+    openDB();
 
-        // Vider les champs du formulaire
-        document.getElementById("clearForm").addEventListener("click", () => {
-            document.getElementById("packageForm").reset();
-            imagePreview.innerHTML = "";
-            imageFiles = [];
-            signaturePad.clear();
-        });
+    // Fonction pour sauvegarder les données dans IndexedDB
+    const saveToIndexedDB = (data) => {
+        const transaction = db.transaction(["receptions"], "readwrite");
+        const objectStore = transaction.objectStore("receptions");
+
+        const request = objectStore.add(data);
+        request.onsuccess = () => {
+            alert("Données sauvegardées dans IndexedDB !");
+            document.getElementById("clearForm").click(); // Réinitialiser le formulaire après sauvegarde
+        };
+
+        request.onerror = (event) => {
+            console.error("Erreur lors de l'ajout :", event.target.error);
+            alert("Une erreur est survenue. Les données n'ont pas été enregistrées.");
+        };
+    };
+
+    // Gestion de la soumission du formulaire
+    document.getElementById("packageForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+
+        // Collecter les données du formulaire
+        const data = {
+            recipientName: formData.get("recipientName"),
+            receiverName: formData.get("receiverName"),
+            packageCount: formData.get("packageCount"),
+            email: formData.get("email"),
+            deliveryDate: formData.get("deliveryDate"),
+            delivered: formData.get("delivered"),
+            signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL("image/jpeg"),
+            photos: [],
+        };
+
+        // Valider les champs
+        let valid = true;
+        if (!data.recipientName) {
+            afficherErreur("recipientName", "Nom du destinataire requis.");
+            valid = false;
+        }
+        if (!data.receiverName) {
+            afficherErreur("receiverName", "Nom du réceptionnaire requis.");
+            valid = false;
+        }
+        if (!data.packageCount || data.packageCount < 1) {
+            afficherErreur("packageCount", "Nombre de colis invalide.");
+            valid = false;
+        }
+        if (!data.email) {
+            afficherErreur("email", "Email requis.");
+            valid = false;
+        }
+        if (!data.deliveryDate) {
+            afficherErreur("deliveryDate", "Date et heure requises.");
+            valid = false;
+        }
+        if (!data.signature) {
+            alert("Veuillez fournir une signature !");
+            valid = false;
+        }
+
+        if (!valid) return;
+
+        // Ajouter les photos compressées
+        for (let file of imageFiles) {
+            const dataURL = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+            data.photos.push(dataURL);
+        }
+
+        saveToIndexedDB(data);
+    });
+
+    // Effacer la signature
+    document.getElementById("clearSignature").addEventListener("click", () => {
+        signaturePad.clear();
+    });
+
+    // Réinitialiser le formulaire
+    document.getElementById("clearForm").addEventListener("click", () => {
+        document.getElementById("packageForm").reset();
+        imagePreview.innerHTML = "";
+        imageFiles = [];
+        signaturePad.clear();
+
+        // Réinitialiser les messages d'erreur
+        const errorMessages = document.querySelectorAll(".error-message");
+        errorMessages.forEach((message) => (message.innerText = ""));
+    });
+});
+
     </script>
 </body>
 </html>
