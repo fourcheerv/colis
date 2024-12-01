@@ -65,20 +65,43 @@ input[type="text"] {
     border-radius: 4px;
 }
 
+/* Boutons différenciés par couleur */
 button {
-    background-color: #003d66;
-    color: white;
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
     font-size: 1em;
     cursor: pointer;
+    margin: 10px;
 }
 
+/* Couleurs spécifiques aux boutons */
+#loadDataBtn {
+    background-color: #4CAF50; /* Vert pour Charger les données */
+    color: white;
+}
+
+#exportBtn {
+    background-color: #2196F3; /* Bleu pour Exporter vers Excel */
+    color: white;
+}
+
+#exportZipBtn {
+    background-color: #FF9800; /* Orange pour Exporter en ZIP */
+    color: white;
+}
+
+#deleteSelectedBtn {
+    background-color: #F44336; /* Rouge pour Supprimer les éléments */
+    color: white;
+}
+
+/* Effet au survol des boutons */
 button:hover {
-    background-color: #005f87;
+    opacity: 0.8;
 }
 
+/* Désactivation du bouton */
 button:disabled {
     background-color: #aaa;
     cursor: not-allowed;
