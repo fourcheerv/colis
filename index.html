@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulaire de réception des colis</title>
-    <!-- Lien vers le fichier CSS externe -->
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -31,7 +30,7 @@
         <div id="imagePreview"></div>
 
         <label>Signature :</label>
-        <canvas id="signaturePad" width="500" height="200"></canvas>
+        <canvas id="signaturePad" width="500" height="200" style="border:1px solid black;"></canvas>
         <button type="button" id="clearSignature">Effacer la signature</button>
 
         <p>Colis Livré :</p>
@@ -47,6 +46,7 @@
         </div>
 
         <button type="submit">Sauvegarder avec IndexedDB</button>
+        <button type="button" id="clearFormBtn">Vider les champs</button>
     </form>
 
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -55,8 +55,17 @@
         const imagePreview = document.getElementById("imagePreview");
         const signatureCanvas = document.getElementById("signaturePad");
         const signaturePad = new SignaturePad(signatureCanvas);
+        const clearFormBtn = document.getElementById("clearFormBtn");
 
         let imageFiles = []; // Stockage temporaire des images
+
+        // Initialiser le canevas avec un fond blanc pour éviter les signatures noires
+        const setCanvasBackground = () => {
+            const ctx = signatureCanvas.getContext("2d");
+            ctx.fillStyle = "white"; // Définir le fond en blanc
+            ctx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+        };
+        setCanvasBackground();
 
         // Gestion des images
         fileUpload.addEventListener("change", () => {
@@ -140,7 +149,7 @@
                 email: formData.get("email"),
                 deliveryDate: formData.get("deliveryDate"),
                 delivered: formData.get("delivered"),
-                signature: signaturePad.toDataURL("image/jpeg"),
+                signature: signatureCanvas.toDataURL("image/jpeg"),
                 photos: [],
             };
 
@@ -155,12 +164,25 @@
             }
 
             saveToIndexedDB(data);
+            clearForm(); // Vider les champs après sauvegarde
         });
 
         // Effacer la signature
         document.getElementById("clearSignature").addEventListener("click", () => {
             signaturePad.clear();
+            setCanvasBackground(); // Réinitialiser le fond blanc après effacement
         });
+
+        // Vider les champs du formulaire
+        const clearForm = () => {
+            document.getElementById("packageForm").reset();
+            imagePreview.innerHTML = "";
+            imageFiles = [];
+            signaturePad.clear();
+            setCanvasBackground();
+        };
+
+        clearFormBtn.addEventListener("click", clearForm);
     </script>
 </body>
 </html>
