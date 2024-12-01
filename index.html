@@ -34,6 +34,18 @@
         <canvas id="signaturePad" width="500" height="200"></canvas>
         <button type="button" id="clearSignature">Effacer la signature</button>
 
+        <p>Colis Livré :</p>
+        <div class="radio-group">
+            <label>
+                <input type="radio" id="trueRadio" name="delivered" value="true" />
+                Oui
+            </label>
+            <label>
+                <input type="radio" id="falseRadio" name="delivered" value="false" />
+                Non
+            </label>
+        </div>
+
         <button type="submit">Sauvegarder avec IndexedDB</button>
     </form>
 
