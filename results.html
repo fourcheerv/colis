@@ -13,7 +13,6 @@
 </head>
 <body>
     <h1>Gestion des Données en local sur Navigateur</h1>
-    <!-- Formulaire de recherche avec bouton de recherche -->
     <input type="text" id="searchInput" placeholder="Rechercher par nom, email ou ID" />
     <button id="searchBtn">Rechercher</button>
     <button id="loadDataBtn">Charger les données</button>
@@ -40,6 +39,15 @@
         </tbody>
     </table>
     <div><a href="https://fourcheerv.github.io/colis/">Retour à la page d'acceuil</a></div>
+
+    <!-- Pop-up pour afficher l'image -->
+    <div id="imagePopup">
+        <div id="popupContent">
+            <span id="closePopup">&times;</span>
+            <img id="popupImage" src="" alt="Aperçu de l'image">
+        </div>
+    </div>
+
     <script>
         const dbName = "ReceptionDB";
         let db;
@@ -71,7 +79,7 @@
 
         openDB();
 
-        // Charger les données de la base et les afficher dans le tableau
+        // Charger les données et les afficher dans le tableau
         const loadData = () => {
             const transaction = db.transaction(["receptions"], "readonly");
             const objectStore = transaction.objectStore("receptions");
@@ -85,17 +93,19 @@
                 data.forEach((item) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td class="checkbox"><input type="checkbox" class="selectRow" data-id="${item.id}"></td>
+                        <td><input type="checkbox" class="selectRow" data-id="${item.id}"></td>
                         <td>${item.id}</td>
                         <td>${item.recipientName}</td>
                         <td>${item.receiverName}</td>
                         <td>${item.email}</td>
                         <td>${item.packageCount}</td>
                         <td>${item.deliveryDate}</td>
-                        <td><img src="${item.signature || ''}" alt="Signature"></td>
-                        <td>${(item.photos || []).map(
-                            (photo) => `<img src="${photo}" alt="Photo" title="Photo">`
-                        ).join(" ")}</td>
+                        <td><img src="${item.signature || ''}" alt="Signature" style="max-width: 50px; max-height: 50px;"></td>
+                        <td>${(item.photos || []).map(photo => `
+                                <img src="${photo}" alt="Photo" 
+                                    onclick="openImagePopup('${photo}')"
+                                    style="cursor: pointer; max-width: 50px; max-height: 50px;">
+                            `).join(" ")}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -202,30 +212,49 @@
                     folder.file("info.json", JSON.stringify(jsonContent, null, 2));
 
                     if (item.signature) {
-                        folder.file("signature.jpg", item.signature.split(",")[1], { base64: true });
+                        const signatureBlob = await fetch(item.signature).then((res) => res.blob());
+                        folder.file("signature.png", signatureBlob);
                     }
 
-                    (item.photos || []).forEach((photo, index) => {
-                        folder.file(`photo_${index + 1}.jpg`, photo.split(",")[1], { base64: true });
-                    });
+                    if (item.photos) {
+                        for (let i = 0; i < item.photos.length; i++) {
+                            const photoBlob = await fetch(item.photos[i]).then((res) => res.blob());
+                            folder.file(`photo_${i + 1}.png`, photoBlob);
+                        }
+                    }
                 }
 
-                const content = await zip.generateAsync({ type: "blob" });
-                saveAs(content, "Données_Reception.zip");
-                alert("Fichier ZIP exporté avec succès !");
+                zip.generateAsync({ type: "blob" }).then((content) => {
+                    saveAs(content, "Receptions.zip");
+                    alert("Fichier ZIP exporté avec succès !");
+                });
             };
         };
 
-        // Écouteurs d'événements
+        // Gestion des événements
         document.getElementById("loadDataBtn").addEventListener("click", loadData);
+        document.getElementById("searchBtn").addEventListener("click", searchData);
         document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
         document.getElementById("exportBtn").addEventListener("click", exportToExcel);
         document.getElementById("exportZipBtn").addEventListener("click", exportToZip);
-        document.getElementById("selectAll").addEventListener("click", () => {
-            const checkboxes = document.querySelectorAll(".selectRow");
-            checkboxes.forEach((checkbox) => checkbox.checked = document.getElementById("selectAll").checked);
+
+        // Pop-up pour les images
+        const openImagePopup = (src) => {
+            const popup = document.getElementById("imagePopup");
+            const popupImage = document.getElementById("popupImage");
+            popupImage.src = src;
+            popup.style.display = "flex";
+        };
+
+        const closeImagePopup = () => {
+            const popup = document.getElementById("imagePopup");
+            popup.style.display = "none";
+        };
+
+        document.getElementById("closePopup").addEventListener("click", closeImagePopup);
+        document.getElementById("imagePopup").addEventListener("click", (event) => {
+            if (event.target.id === "imagePopup") closeImagePopup();
         });
-        document.getElementById("searchBtn").addEventListener("click", searchData);  // Bouton de recherche
     </script>
 </body>
 </html>
