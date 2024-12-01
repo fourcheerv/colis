@@ -68,22 +68,79 @@
 
         let imageFiles = []; // Stockage temporaire des images
 
-        // Gestion des images
-        fileUpload.addEventListener("change", () => {
-            const file = fileUpload.files[0];
-            if (file && file.type.startsWith("image/")) {
-                imageFiles.push(file);
-
-                // Afficher un aperçu
+        // Fonction pour compresser l'image à moins de 1 Mo
+        const compressImage = (file) => {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.createElement("img");
-                    img.src = e.target.result;
-                    img.style.maxWidth = "200px";
-                    img.style.margin = "5px";
-                    imagePreview.appendChild(img);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Redimensionnement pour ajuster la taille
+                        const MAX_WIDTH = 1024; // Limiter la largeur à 1024px
+                        const MAX_HEIGHT = 1024; // Limiter la hauteur à 1024px
+
+                        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+                            const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+                            width = width * ratio;
+                            height = height * ratio;
+                        }
+
+                        // Créer un canvas pour redimensionner l'image
+                        const canvas = document.createElement("canvas");
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Convertir l'image en base64
+                        canvas.toDataURL("image/jpeg", 0.8, (dataUrl) => {
+                            // Créer un fichier à partir du Data URL
+                            const data = dataUrl.split(',')[1];
+                            const binary = atob(data);
+                            const array = [];
+                            for (let i = 0; i < binary.length; i++) {
+                                array.push(binary.charCodeAt(i));
+                            }
+                            const compressedFile = new Blob([new Uint8Array(array)], { type: 'image/jpeg' });
+
+                            // Vérifier si la taille est inférieure à 1 Mo
+                            if (compressedFile.size <= 1024 * 1024) {
+                                resolve(compressedFile);
+                            } else {
+                                reject("L'image est trop grande même après compression.");
+                            }
+                        });
+                    };
+                    img.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
+            });
+        };
+
+        // Gestion des images
+        fileUpload.addEventListener("change", async () => {
+            const file = fileUpload.files[0];
+            if (file && file.type.startsWith("image/")) {
+                try {
+                    const compressedFile = await compressImage(file);
+                    imageFiles.push(compressedFile);
+
+                    // Afficher un aperçu
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement("img");
+                        img.src = e.target.result;
+                        img.style.maxWidth = "200px";
+                        img.style.margin = "5px";
+                        imagePreview.appendChild(img);
+                    };
+                    reader.readAsDataURL(compressedFile);
+                } catch (error) {
+                    alert("Erreur lors de la compression de l'image: " + error);
+                }
             }
             fileUpload.value = "";
         });
@@ -98,7 +155,6 @@
             request.onupgradeneeded = (event) => {
                 db = event.target.result;
 
-                // Créer un object store pour les données de réception
                 if (!db.objectStoreNames.contains("receptions")) {
                     const objectStore = db.createObjectStore("receptions", {
                         keyPath: "id",
@@ -143,7 +199,6 @@
 
             const formData = new FormData(event.target);
 
-            // Collecter les données
             const data = {
                 recipientName: formData.get("recipientName"),
                 receiverName: formData.get("receiverName"),
@@ -178,13 +233,4 @@
             signaturePad.clear();
         });
 
-        // Vider les champs du formulaire
-        document.getElementById("clearForm").addEventListener("click", () => {
-            document.getElementById("packageForm").reset();
-            imagePreview.innerHTML = "";
-            imageFiles = [];
-            signaturePad.clear();
-        });
-    </script>
-</body>
-</html>
+       
