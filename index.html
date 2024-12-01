@@ -95,40 +95,26 @@
     }
 
     // Gestion de l'aperçu des images
-    const photoCountInfo = document.createElement("p");
-    photoCountInfo.innerText = "Photos restantes : 3";
-document.body.insertBefore(photoCountInfo, fileUpload);
+    fileUpload.addEventListener("change", () => {
+        const file = fileUpload.files[0];
+        if (file && file.type.startsWith("image/")) {
+            compresserImage(file, (compressedBlob) => {
+                imageFiles.push(compressedBlob);
 
-fileUpload.addEventListener("change", () => {
-    if (imageFiles.length >= 3) {
-        alert("Vous ne pouvez télécharger que 3 photos au maximum.");
-        fileUpload.value = "";
-        return;
-    }
-
-    const file = fileUpload.files[0];
-    if (file && file.type.startsWith("image/")) {
-        compresserImage(file, (compressedBlob) => {
-            imageFiles.push(compressedBlob);
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.createElement("img");
-                img.src = e.target.result;
-                img.style.maxWidth = "200px";
-                img.style.margin = "5px";
-                imagePreview.appendChild(img);
-            };
-            reader.readAsDataURL(compressedBlob);
-
-            // Mettre à jour les photos restantes
-            const remaining = 3 - imageFiles.length;
-            photoCountInfo.innerText = `Photos restantes : ${remaining}`;
-        });
-    }
-    fileUpload.value = "";
-});
-
+                // Aperçu des images
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.style.maxWidth = "200px";
+                    img.style.margin = "5px";
+                    imagePreview.appendChild(img);
+                };
+                reader.readAsDataURL(compressedBlob);
+            });
+        }
+        fileUpload.value = ""; // Réinitialiser l'input file
+    });
 
     // Initialisation IndexedDB
     const dbName = "ReceptionDB";
