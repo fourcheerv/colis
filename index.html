@@ -90,6 +90,24 @@
         #clearSignature:hover {
             background-color: #c82333;
         }
+
+        /* Alignement des boutons radio */
+        .radio-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .radio-group input[type="radio"] {
+            width: auto;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -119,11 +137,16 @@
         <button type="button" id="clearSignature">Effacer la signature</button>
 
         <p>Colis Livré :</p>
-        <input type="radio" id="trueRadio" name="oui" value="true" />
-        <label for="true">Oui</label>
-
-        <input type="radio" id="falseeRadio" name="non" value="false" />
-        <label for="false">non</label>
+        <div class="radio-group">
+            <label>
+                <input type="radio" id="trueRadio" name="delivered" value="true" />
+                Oui
+            </label>
+            <label>
+                <input type="radio" id="falseRadio" name="delivered" value="false" />
+                Non
+            </label>
+        </div>
         
         <button type="submit">Valider</button>
     </form>
@@ -196,7 +219,6 @@
 
         document.getElementById("clearSignature").addEventListener("click", () => {
             signaturePad.clear();
-    
         });
     </script>
 </body>
