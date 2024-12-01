@@ -133,6 +133,43 @@
             };
         };
 
+        // Exporter les données au format Excel
+        const exportToExcel = () => {
+            const transaction = db.transaction(["receptions"], "readonly");
+            const objectStore = transaction.objectStore("receptions");
+            const request = objectStore.getAll();
+
+            request.onsuccess = () => {
+                const data = request.result;
+
+                // Créer des données Excel à partir des données
+                const excelData = data.map((item) => ({
+                    ID: item.id,
+                    Destinataire: item.recipientName,
+                    Réceptionnaire: item.receiverName,
+                    Email: item.email,
+                    "Nombre de colis": item.packageCount,
+                    Date: item.deliveryDate,
+                    Signature: "Signature incluse",
+                    Photos: `Photos incluses (${item.photos.length})`,
+                }));
+
+                // Convertir en feuille Excel
+                const worksheet = XLSX.utils.json_to_sheet(excelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Receptions");
+
+                // Générer et télécharger le fichier Excel
+                XLSX.writeFile(workbook, "Données_Reception.xlsx");
+                alert("Fichier Excel exporté avec succès !");
+            };
+
+            request.onerror = (event) => {
+                console.error("Erreur lors de l'exportation :", event.target.error);
+            };
+        };
+
+
         // Exporter les données au format ZIP
         const exportToZip = async () => {
             const exportButton = document.getElementById("exportZipBtn");
@@ -232,6 +269,7 @@
             });
         });
         document.getElementById("exportZipBtn").addEventListener("click", exportToZip);
+        document.getElementById("exportBtn").addEventListener("click", exportToExcel);
     </script>
 </body>
 </html>
