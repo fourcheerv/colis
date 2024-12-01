@@ -7,13 +7,18 @@
      <!-- Lien vers le fichier CSS externe -->
      <link rel="stylesheet" href="results.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
 </head>
 <body>
     <h1>Gestion des Données IndexedDB</h1>
     <button id="loadDataBtn">Charger les données</button>
     <button id="exportBtn">Exporter vers Excel</button>
+    <button id="exportZipBtn">Exporter sous forme de ZIP</button>
     <button id="deleteDBBtn">Supprimer la base de données</button>
     <button id="deleteSelectedBtn">Supprimer les éléments sélectionnés</button>
+ 
     <table id="dataTable">
         <thead>
             <tr>
@@ -185,11 +190,93 @@
             });
         };
 
+        // Supprimer la base de données
+        const deleteDatabase = () => {
+        const deleteRequest = indexedDB.deleteDatabase(dbName);
+
+        deleteRequest.onsuccess = () => {
+        alert("Base de données supprimée avec succès !");
+        console.log("Base de données supprimée.");
+        };
+
+        deleteRequest.onerror = (event) => {
+        console.error("Erreur lors de la suppression de la base de données :", event.target.error);
+        };
+
+        deleteRequest.onblocked = () => {
+        alert(
+            "La suppression de la base de données est bloquée. Veuillez fermer les autres onglets ou instances utilisant cette base de données."
+        );
+        };
+        };
+
+        // Exporter les données au format ZIP
+        const exportToZip = () => {
+        const transaction = db.transaction(["receptions"], "readonly");
+        const objectStore = transaction.objectStore("receptions");
+        const request = objectStore.getAll();
+
+        request.onsuccess = async () => {
+            const data = request.result;
+            if (data.length === 0) {
+                alert("Aucune donnée à exporter !");
+                return;
+            }
+
+            const zip = new JSZip();
+
+            for (const item of data) {
+                // Créer un dossier pour chaque entrée
+                const folder = zip.folder(`ligne_${item.id}`);
+                
+                // Ajouter le fichier JSON avec les informations
+                const jsonContent = {
+                    id: item.id,
+                    recipientName: item.recipientName,
+                    receiverName: item.receiverName,
+                    email: item.email,
+                    packageCount: item.packageCount,
+                    deliveryDate: item.deliveryDate,
+                };
+                folder.file("info.json", JSON.stringify(jsonContent, null, 2));
+
+                // Ajouter les photos au dossier
+                if (item.photos && item.photos.length > 0) {
+                    for (let i = 0; i < item.photos.length; i++) {
+                        const response = await fetch(item.photos[i]);
+                        const blob = await response.blob();
+                        folder.file(`photo_${i + 1}.jpg`, blob);
+                    }
+                }
+
+                // Ajouter la signature (si disponible)
+                if (item.signature) {
+                    const response = await fetch(item.signature);
+                    const blob = await response.blob();
+                    folder.file("signature.jpg", blob);
+                }
+            }
+
+            // Générer et télécharger le fichier ZIP
+            zip.generateAsync({ type: "blob" }).then((content) => {
+                saveAs(content, "Données_Reception.zip");
+                alert("Fichier ZIP exporté avec succès !");
+            });
+        };
+
+        request.onerror = (event) => {
+            console.error("Erreur lors de l'exportation ZIP :", event.target.error);
+        };
+    };
+
         // Écouteurs d'événements
         document.getElementById("loadDataBtn").addEventListener("click", loadData);
         document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
         document.getElementById("selectAll").addEventListener("click", toggleSelectAll);
         document.getElementById("exportBtn").addEventListener("click", exportToExcel);
+        document.getElementById("deleteDBBtn").addEventListener("click", deleteDatabase);
+        document.getElementById("exportZipBtn").addEventListener("click", exportToZip);
+
     </script>
 </body>
 </html>

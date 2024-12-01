@@ -73,6 +73,14 @@ button:hover {
     background: #e0a800;
 }
 
+#exportZipBtn {
+    background:purple;
+}
+#exportZipBtn:hover {
+    background:violet;
+}
+
+
 .checkbox {
     text-align: center;
 }
