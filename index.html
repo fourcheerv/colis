@@ -114,16 +114,16 @@
         <input type="file" id="fileUpload" accept="image/*" capture="camera">
         <div id="imagePreview" class="image-preview"></div>
 
+        <label>Signature :</label>
+        <canvas id="signaturePad" width="500" height="200"></canvas>
+        <button type="button" id="clearSignature">Effacer la signature</button>
+
         <p>Colis Livré :</p>
         <input type="radio" id="trueRadio" name="oui" value="true" />
         <label for="true">Oui</label>
 
         <input type="radio" id="falseeRadio" name="non" value="false" />
         <label for="false">non</label>
-
-        <label>Signature :</label>
-        <canvas id="signaturePad" width="500" height="200"></canvas>
-        <button type="button" id="clearSignature">Effacer la signature</button>
         
         <button type="submit">Valider</button>
     </form>
