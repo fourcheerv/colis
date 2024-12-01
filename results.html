@@ -4,21 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interface d'export et de visualisation des colis</title>
-     <!-- Lien vers le fichier CSS externe -->
-     <link rel="stylesheet" href="results.css">
+    <link rel="stylesheet" href="results.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
 </head>
 <body>
     <h1>Gestion des Données IndexedDB</h1>
     <button id="loadDataBtn">Charger les données</button>
     <button id="exportBtn">Exporter vers Excel</button>
     <button id="exportZipBtn">Exporter sous forme de ZIP</button>
-    <!-- <button id="deleteDBBtn">Supprimer la base de données</button>-->
     <button id="deleteSelectedBtn">Supprimer les éléments sélectionnés</button>
- 
+
     <table id="dataTable">
         <thead>
             <tr>
@@ -48,7 +45,6 @@
             request.onupgradeneeded = (event) => {
                 db = event.target.result;
 
-                // Créer l'object store si nécessaire
                 if (!db.objectStoreNames.contains("receptions")) {
                     const objectStore = db.createObjectStore("receptions", {
                         keyPath: "id",
@@ -70,7 +66,7 @@
 
         openDB();
 
-        // Charger les données depuis IndexedDB
+        // Charger les données
         const loadData = () => {
             const transaction = db.transaction(["receptions"], "readonly");
             const objectStore = transaction.objectStore("receptions");
@@ -79,7 +75,7 @@
             request.onsuccess = () => {
                 const data = request.result;
                 const tbody = document.getElementById("dataTable").querySelector("tbody");
-                tbody.innerHTML = ""; // Réinitialiser le tableau
+                tbody.innerHTML = "";
 
                 data.forEach((item) => {
                     const row = document.createElement("tr");
@@ -91,17 +87,10 @@
                         <td>${item.email}</td>
                         <td>${item.packageCount}</td>
                         <td>${item.deliveryDate}</td>
-                        <td>
-                            <img src="${item.signature}" alt="Signature">
-                        </td>
-                        <td>
-                            ${item.photos
-                                .map(
-                                    (photo) =>
-                                        `<img src="${photo}" alt="Photo" title="Photo">`
-                                )
-                                .join(" ")}
-                        </td>
+                        <td><img src="${item.signature || ''}" alt="Signature"></td>
+                        <td>${(item.photos || []).map(
+                            (photo) => `<img src="${photo}" alt="Photo" title="Photo">`
+                        ).join(" ")}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -140,143 +129,109 @@
 
             transaction.oncomplete = () => {
                 alert("Éléments sélectionnés supprimés avec succès !");
-                loadData(); // Recharger les données pour mettre à jour le tableau
+                loadData();
             };
         };
 
-         // Exporter les données au format Excel
-         const exportToExcel = () => {
+        // Exporter les données au format ZIP
+        const exportToZip = async () => {
+            const exportButton = document.getElementById("exportZipBtn");
+            exportButton.disabled = true;
+            exportButton.textContent = "Exportation en cours...";
+
             const transaction = db.transaction(["receptions"], "readonly");
             const objectStore = transaction.objectStore("receptions");
             const request = objectStore.getAll();
 
-            request.onsuccess = () => {
+            request.onsuccess = async () => {
                 const data = request.result;
 
-                // Créer des données Excel à partir des données
-                const excelData = data.map((item) => ({
-                    ID: item.id,
-                    Destinataire: item.recipientName,
-                    Réceptionnaire: item.receiverName,
-                    Email: item.email,
-                    "Nombre de colis": item.packageCount,
-                    Date: item.deliveryDate,
-                    Signature: "Signature incluse",
-                    Photos: `Photos incluses (${item.photos.length})`,
-                }));
+                if (data.length === 0) {
+                    alert("Aucune donnée à exporter !");
+                    exportButton.disabled = false;
+                    exportButton.textContent = "Exporter sous forme de ZIP";
+                    return;
+                }
 
-                // Convertir en feuille Excel
-                const worksheet = XLSX.utils.json_to_sheet(excelData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Receptions");
+                const zip = new JSZip();
 
-                // Générer et télécharger le fichier Excel
-                XLSX.writeFile(workbook, "Données_Reception.xlsx");
-                alert("Fichier Excel exporté avec succès !");
+                for (const item of data) {
+                    const folder = zip.folder(`ligne_${item.id}`);
+                    
+                    const jsonContent = {
+                        id: item.id,
+                        recipientName: item.recipientName,
+                        receiverName: item.receiverName,
+                        email: item.email,
+                        packageCount: item.packageCount,
+                        deliveryDate: item.deliveryDate,
+                    };
+                    folder.file("info.json", JSON.stringify(jsonContent, null, 2));
+
+                    // Convertir les images et signatures en blobs
+                    const addBlobToFolder = async (url, fileName) => {
+                        try {
+                            if (url.startsWith("data:")) {
+                                const base64toBlob = (base64, type = "image/jpeg") => {
+                                    const binary = atob(base64.split(",")[1]);
+                                    const array = [];
+                                    for (let i = 0; i < binary.length; i++) {
+                                        array.push(binary.charCodeAt(i));
+                                    }
+                                    return new Blob([new Uint8Array(array)], { type });
+                                };
+                                const blob = base64toBlob(url);
+                                folder.file(fileName, blob);
+                            } else {
+                                const response = await fetch(url);
+                                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                                const blob = await response.blob();
+                                folder.file(fileName, blob);
+                            }
+                        } catch (error) {
+                            console.error(`Erreur lors du téléchargement de ${fileName} :`, error);
+                        }
+                    };
+
+                    for (let i = 0; i < (item.photos || []).length; i++) {
+                        await addBlobToFolder(item.photos[i], `photo_${i + 1}.jpg`);
+                    }
+
+                    if (item.signature) {
+                        await addBlobToFolder(item.signature, "signature.jpg");
+                    }
+                }
+
+                zip.generateAsync({ type: "blob" }).then((content) => {
+                    saveAs(content, "Données_Reception.zip");
+                    alert("Fichier ZIP exporté avec succès !");
+                }).catch((error) => {
+                    console.error("Erreur lors de la génération du fichier ZIP :", error);
+                    alert("Une erreur s'est produite lors de l'exportation ZIP.");
+                }).finally(() => {
+                    exportButton.disabled = false;
+                    exportButton.textContent = "Exporter sous forme de ZIP";
+                });
             };
 
             request.onerror = (event) => {
-                console.error("Erreur lors de l'exportation :", event.target.error);
+                console.error("Erreur lors de l'exportation ZIP :", event.target.error);
+                exportButton.disabled = false;
+                exportButton.textContent = "Exporter sous forme de ZIP";
             };
         };
 
-
-        // Sélectionner/Désélectionner toutes les lignes
-        const toggleSelectAll = () => {
+        // Ajouter les écouteurs
+        document.getElementById("loadDataBtn").addEventListener("click", loadData);
+        document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
+        document.getElementById("selectAll").addEventListener("click", () => {
             const selectAllCheckbox = document.getElementById("selectAll");
             const checkboxes = document.querySelectorAll(".selectRow");
             checkboxes.forEach((checkbox) => {
                 checkbox.checked = selectAllCheckbox.checked;
             });
-        };
-
-        // Supprimer la base de données
-        const deleteDatabase = () => {
-        const deleteRequest = indexedDB.deleteDatabase(dbName);
-
-        deleteRequest.onsuccess = () => {
-        alert("Base de données supprimée avec succès !");
-        console.log("Base de données supprimée.");
-        };
-
-        deleteRequest.onerror = (event) => {
-        console.error("Erreur lors de la suppression de la base de données :", event.target.error);
-        };
-
-        deleteRequest.onblocked = () => {
-        alert(
-            "La suppression de la base de données est bloquée. Veuillez fermer les autres onglets ou instances utilisant cette base de données."
-        );
-        };
-        };
-
-        // Exporter les données au format ZIP
-        const exportToZip = () => {
-        const transaction = db.transaction(["receptions"], "readonly");
-        const objectStore = transaction.objectStore("receptions");
-        const request = objectStore.getAll();
-
-        request.onsuccess = async () => {
-            const data = request.result;
-            if (data.length === 0) {
-                alert("Aucune donnée à exporter !");
-                return;
-            }
-
-            const zip = new JSZip();
-
-            for (const item of data) {
-                // Créer un dossier pour chaque entrée
-                const folder = zip.folder(`ligne_${item.id}`);
-                
-                // Ajouter le fichier JSON avec les informations
-                const jsonContent = {
-                    id: item.id,
-                    recipientName: item.recipientName,
-                    receiverName: item.receiverName,
-                    email: item.email,
-                    packageCount: item.packageCount,
-                    deliveryDate: item.deliveryDate,
-                };
-                folder.file("info.json", JSON.stringify(jsonContent, null, 2));
-
-                // Ajouter les photos au dossier
-                if (item.photos && item.photos.length > 0) {
-                    for (let i = 0; i < item.photos.length; i++) {
-                        const response = await fetch(item.photos[i]);
-                        const blob = await response.blob();
-                        folder.file(`photo_${i + 1}.jpg`, blob);
-                    }
-                }
-
-                // Ajouter la signature (si disponible)
-                if (item.signature) {
-                    const response = await fetch(item.signature);
-                    const blob = await response.blob();
-                    folder.file("signature.jpg", blob);
-                }
-            }
-
-            // Générer et télécharger le fichier ZIP
-            zip.generateAsync({ type: "blob" }).then((content) => {
-                saveAs(content, "Données_Reception.zip");
-                alert("Fichier ZIP exporté avec succès !");
-            });
-        };
-
-        request.onerror = (event) => {
-            console.error("Erreur lors de l'exportation ZIP :", event.target.error);
-        };
-    };
-
-        // Écouteurs d'événements
-        document.getElementById("loadDataBtn").addEventListener("click", loadData);
-        document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
-        document.getElementById("selectAll").addEventListener("click", toggleSelectAll);
-        document.getElementById("exportBtn").addEventListener("click", exportToExcel);
-        document.getElementById("deleteDBBtn").addEventListener("click", deleteDatabase);
+        });
         document.getElementById("exportZipBtn").addEventListener("click", exportToZip);
-
     </script>
 </body>
 </html>
