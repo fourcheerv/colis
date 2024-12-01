@@ -76,6 +76,11 @@ button {
 }
 
 /* Couleurs spécifiques aux boutons */
+#searchBtn{
+    background-color: purple; /* Vert pour Charger les données */
+    color: white;
+}
+
 #loadDataBtn {
     background-color: #4CAF50; /* Vert pour Charger les données */
     color: white;
