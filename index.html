@@ -12,31 +12,37 @@
     <form id="packageForm">
         <label for="recipientName">Nom du destinataire :</label>
         <input type="text" id="recipientName" name="recipientName" required>
+        <span id="recipientNameError" class="error-message"></span>
 
         <label for="receiverName">Nom du réceptionnaire :</label>
         <input type="text" id="receiverName" name="receiverName" required>
+        <span id="receiverNameError" class="error-message"></span>
 
         <label for="packageCount">Nombre de colis :</label>
         <input type="number" id="packageCount" name="packageCount" min="1" required>
+        <span id="packageCountError" class="error-message"></span>
 
         <label for="email">Adresse email :</label>
         <input type="email" id="email" name="email" required>
+        <span id="emailError" class="error-message"></span>
 
         <label for="deliveryDate">Date et Heure de réception :</label>
         <input type="datetime-local" id="deliveryDate" name="deliveryDate" required>
+        <span id="deliveryDateError" class="error-message"></span>
 
         <label for="fileUpload">Prendre une photo :</label>
         <input type="file" id="fileUpload" accept="image/*" capture="camera">
         <div id="imagePreview"></div>
 
         <label>Signature :</label>
-        <canvas id="signaturePad" width="500" height="200" style="border:1px solid black;"></canvas>
+        <canvas id="signaturePad" width="500" height="200" style="border: 1px solid #000;"></canvas>
         <button type="button" id="clearSignature">Effacer la signature</button>
+        <span id="signatureError" class="error-message"></span>
 
         <p>Colis Livré :</p>
         <div class="radio-group">
             <label>
-                <input type="radio" id="trueRadio" name="delivered" value="true" />
+                <input type="radio" id="trueRadio" name="delivered" value="true" required />
                 Oui
             </label>
             <label>
@@ -44,9 +50,10 @@
                 Non
             </label>
         </div>
+        <span id="deliveredError" class="error-message"></span>
 
         <button type="submit">Sauvegarder avec IndexedDB</button>
-        <button type="button" id="clearFormBtn">Vider les champs</button>
+        <button type="button" id="clearForm">Vider les champs</button>
     </form>
 
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -54,18 +61,11 @@
         const fileUpload = document.getElementById("fileUpload");
         const imagePreview = document.getElementById("imagePreview");
         const signatureCanvas = document.getElementById("signaturePad");
-        const signaturePad = new SignaturePad(signatureCanvas);
-        const clearFormBtn = document.getElementById("clearFormBtn");
+        const signaturePad = new SignaturePad(signatureCanvas, {
+            backgroundColor: '#fff' // Ajout d'un fond blanc à la signature
+        });
 
         let imageFiles = []; // Stockage temporaire des images
-
-        // Initialiser le canevas avec un fond blanc pour éviter les signatures noires
-        const setCanvasBackground = () => {
-            const ctx = signatureCanvas.getContext("2d");
-            ctx.fillStyle = "white"; // Définir le fond en blanc
-            ctx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-        };
-        setCanvasBackground();
 
         // Gestion des images
         fileUpload.addEventListener("change", () => {
@@ -128,6 +128,7 @@
             const request = objectStore.add(data);
             request.onsuccess = () => {
                 alert("Données sauvegardées dans IndexedDB !");
+                document.getElementById("clearForm").click(); // Réinitialiser le formulaire après sauvegarde
             };
 
             request.onerror = (event) => {
@@ -149,7 +150,7 @@
                 email: formData.get("email"),
                 deliveryDate: formData.get("deliveryDate"),
                 delivered: formData.get("delivered"),
-                signature: signatureCanvas.toDataURL("image/jpeg"),
+                signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL("image/jpeg"),
                 photos: [],
             };
 
@@ -163,26 +164,26 @@
                 data.photos.push(dataURL);
             }
 
+            if (!data.signature) {
+                alert("Veuillez fournir une signature !");
+                return;
+            }
+
             saveToIndexedDB(data);
-            clearForm(); // Vider les champs après sauvegarde
         });
 
         // Effacer la signature
         document.getElementById("clearSignature").addEventListener("click", () => {
             signaturePad.clear();
-            setCanvasBackground(); // Réinitialiser le fond blanc après effacement
         });
 
         // Vider les champs du formulaire
-        const clearForm = () => {
+        document.getElementById("clearForm").addEventListener("click", () => {
             document.getElementById("packageForm").reset();
             imagePreview.innerHTML = "";
             imageFiles = [];
             signaturePad.clear();
-            setCanvasBackground();
-        };
-
-        clearFormBtn.addEventListener("click", clearForm);
+        });
     </script>
 </body>
 </html>
