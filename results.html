@@ -3,203 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau des données</title>
+    <title>Interface d'export et de visualisation des colis</title>
+    <!-- Inclure la feuille de style -->
     <link rel="stylesheet" href="results.css">
+    <!-- Bibliothèques nécessaires -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
-    <h1>Tableau des données sauvegardées</h1>
-    <div>
-        <input type="text" id="searchBox" placeholder="Rechercher par email ou nom">
-        <button id="clearSearch">Réinitialiser</button>
-    </div>
+    <h1>Gestion des Données IndexedDB</h1>
+    <!-- Boutons de gestion -->
+    <button id="loadDataBtn">Charger les données</button>
+    <button id="exportBtn">Exporter vers Excel</button>
+    <button id="exportZipBtn">Exporter sous forme de ZIP</button>
+    <button id="deleteSelectedBtn">Supprimer les éléments sélectionnés</button>
+
+    <!-- Tableau pour afficher les données -->
     <table id="dataTable">
         <thead>
             <tr>
-                <th>Sélection</th>
-                <th>Nom Destinataire</th>
-                <th>Nom Réceptionnaire</th>
-                <th>Nombre de Colis</th>
+                <th><input type="checkbox" id="selectAll"></th>
+                <th>ID</th>
+                <th>Nom du destinataire</th>
+                <th>Nom du réceptionnaire</th>
                 <th>Email</th>
-                <th>Date de Réception</th>
-                <th>Livré</th>
+                <th>Nombre de colis</th>
+                <th>Date</th>
                 <th>Signature</th>
                 <th>Photos</th>
             </tr>
         </thead>
-        <tbody></tbody>
+        <tbody>
+        </tbody>
     </table>
-    <div id="pagination">
-        <button id="prevPage">Précédent</button>
-        <span id="pageIndicator"></span>
-        <button id="nextPage">Suivant</button>
-    </div>
-    <button id="deleteSelected">Supprimer les éléments sélectionnés</button>
-    <button id="exportExcel">Exporter en Excel</button>
-    <button id="exportZip">Exporter en ZIP</button>
 
     <script>
         const dbName = "ReceptionDB";
         let db;
-        const rowsPerPage = 10;
-        let currentPage = 1;
-        let filteredData = []; // Pour stocker les résultats filtrés
 
+        // Ouvrir ou créer la base IndexedDB
         const openDB = () => {
             const request = indexedDB.open(dbName, 1);
+
+            request.onupgradeneeded = (event) => {
+                db = event.target.result;
+                if (!db.objectStoreNames.contains("receptions")) {
+                    const objectStore = db.createObjectStore("receptions", {
+                        keyPath: "id",
+                        autoIncrement: true,
+                    });
+                    objectStore.createIndex("email", "email", { unique: false });
+                }
+            };
+
             request.onsuccess = (event) => {
                 db = event.target.result;
-                loadTableData();
+                console.log("Base IndexedDB prête !");
             };
+
             request.onerror = (event) => {
                 console.error("Erreur avec IndexedDB :", event.target.error);
             };
         };
 
-        const loadTableData = () => {
+        openDB();
+
+        // Charger les données de la base et les afficher dans le tableau
+        const loadData = () => {
             const transaction = db.transaction(["receptions"], "readonly");
             const objectStore = transaction.objectStore("receptions");
+            const request = objectStore.getAll();
 
-            const data = [];
-            objectStore.openCursor().onsuccess = (event) => {
-                const cursor = event.target.result;
-                if (cursor) {
-                    data.push(cursor.value);
-                    cursor.continue();
-                } else {
-                    filteredData = data;
-                    renderTable(filteredData);
-                }
+            request.onsuccess = () => {
+                const data = request.result;
+                const tbody = document.getElementById("dataTable").querySelector("tbody");
+                tbody.innerHTML = "";
+
+                data.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="checkbox"><input type="checkbox" class="selectRow" data-id="${item.id}"></td>
+                        <td>${item.id}</td>
+                        <td>${item.recipientName}</td>
+                        <td>${item.receiverName}</td>
+                        <td>${item.email}</td>
+                        <td>${item.packageCount}</td>
+                        <td>${item.deliveryDate}</td>
+                        <td><img src="${item.signature || ''}" alt="Signature"></td>
+                        <td>${(item.photos || []).map(
+                            (photo) => `<img src="${photo}" alt="Photo" title="Photo">`
+                        ).join(" ")}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                alert("Données chargées avec succès !");
+            };
+
+            request.onerror = (event) => {
+                console.error("Erreur lors du chargement des données :", event.target.error);
             };
         };
 
-        const renderTable = (data) => {
-            const tableBody = document.querySelector("#dataTable tbody");
-            tableBody.innerHTML = "";
-
-            const start = (currentPage - 1) * rowsPerPage;
-            const paginatedData = data.slice(start, start + rowsPerPage);
-
-            paginatedData.forEach((item) => {
-                const row = document.createElement("tr");
-
-                row.innerHTML = `
-                    <td><input type="checkbox" class="row-select" data-id="${item.id}"></td>
-                    <td>${item.recipientName}</td>
-                    <td>${item.receiverName}</td>
-                    <td>${item.packageCount}</td>
-                    <td>${item.email}</td>
-                    <td>${item.deliveryDate}</td>
-                    <td>${item.delivered === "true" ? "Oui" : "Non"}</td>
-                    <td><a href="${item.signature}" target="_blank">Voir</a></td>
-                    <td>${item.photos.map((photo, index) => `<a href="${photo}" target="_blank">Photo ${index + 1}</a>`).join(", ")}</td>
-                `;
-
-                tableBody.appendChild(row);
-            });
-
-            updatePagination(data.length);
-        };
-
-        const updatePagination = (totalRows) => {
-            const pageIndicator = document.getElementById("pageIndicator");
-            const prevPage = document.getElementById("prevPage");
-            const nextPage = document.getElementById("nextPage");
-
-            const totalPages = Math.ceil(totalRows / rowsPerPage);
-            pageIndicator.textContent = `Page ${currentPage} sur ${totalPages}`;
-
-            prevPage.disabled = currentPage === 1;
-            nextPage.disabled = currentPage === totalPages;
-        };
-
-        const handlePagination = (direction) => {
-            currentPage += direction;
-            renderTable(filteredData);
-        };
-
-        document.getElementById("prevPage").addEventListener("click", () => handlePagination(-1));
-        document.getElementById("nextPage").addEventListener("click", () => handlePagination(1));
-
-        // Rechercher dans les données
-        document.getElementById("searchBox").addEventListener("input", (event) => {
-            const query = event.target.value.toLowerCase();
-            filteredData = query
-                ? filteredData.filter(
-                      (item) =>
-                          item.email.toLowerCase().includes(query) ||
-                          item.recipientName.toLowerCase().includes(query)
-                  )
-                : filteredData;
-
-            currentPage = 1;
-            renderTable(filteredData);
-        });
-
-        document.getElementById("clearSearch").addEventListener("click", () => {
-            document.getElementById("searchBox").value = "";
-            loadTableData();
-        });
-
         // Supprimer les éléments sélectionnés
-        document.getElementById("deleteSelected").addEventListener("click", () => {
-            const selectedCheckboxes = document.querySelectorAll(".row-select:checked");
-            if (selectedCheckboxes.length === 0) {
-                alert("Aucune ligne sélectionnée !");
+        const deleteSelected = () => {
+            const checkboxes = document.querySelectorAll(".selectRow:checked");
+            if (checkboxes.length === 0) {
+                alert("Aucun élément sélectionné !");
                 return;
             }
 
+            const idsToDelete = Array.from(checkboxes).map((checkbox) => Number(checkbox.dataset.id));
             const transaction = db.transaction(["receptions"], "readwrite");
             const objectStore = transaction.objectStore("receptions");
 
-            selectedCheckboxes.forEach((checkbox) => {
-                const id = parseInt(checkbox.dataset.id, 10);
-                objectStore.delete(id);
+            idsToDelete.forEach((id) => {
+                const request = objectStore.delete(id);
+                request.onerror = (event) => {
+                    console.error(`Erreur lors de la suppression de l'élément avec ID ${id} :`, event.target.error);
+                };
             });
 
             transaction.oncomplete = () => {
-                alert("Éléments supprimés !");
-                loadTableData();
+                alert("Éléments supprimés avec succès !");
+                loadData();
             };
+        };
+
+        // Exporter les données au format Excel
+        const exportToExcel = () => {
+            const transaction = db.transaction(["receptions"], "readonly");
+            const objectStore = transaction.objectStore("receptions");
+            const request = objectStore.getAll();
+
+            request.onsuccess = () => {
+                const data = request.result;
+                const excelData = data.map((item) => ({
+                    ID: item.id,
+                    Destinataire: item.recipientName,
+                    Réceptionnaire: item.receiverName,
+                    Email: item.email,
+                    "Nombre de colis": item.packageCount,
+                    Date: item.deliveryDate,
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(excelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Receptions");
+
+                XLSX.writeFile(workbook, "Données_Reception.xlsx");
+                alert("Fichier Excel exporté avec succès !");
+            };
+        };
+
+        // Exporter les données au format ZIP
+        const exportToZip = () => {
+            const transaction = db.transaction(["receptions"], "readonly");
+            const objectStore = transaction.objectStore("receptions");
+            const request = objectStore.getAll();
+
+            request.onsuccess = async () => {
+                const data = request.result;
+                if (data.length === 0) {
+                    alert("Aucune donnée à exporter !");
+                    return;
+                }
+
+                const zip = new JSZip();
+
+                for (const item of data) {
+                    const folder = zip.folder(`ligne_${item.id}`);
+                    const jsonContent = {
+                        id: item.id,
+                        recipientName: item.recipientName,
+                        receiverName: item.receiverName,
+                        email: item.email,
+                        packageCount: item.packageCount,
+                        deliveryDate: item.deliveryDate,
+                    };
+                    folder.file("info.json", JSON.stringify(jsonContent, null, 2));
+
+                    if (item.signature) {
+                        folder.file("signature.jpg", item.signature.split(",")[1], { base64: true });
+                    }
+
+                    (item.photos || []).forEach((photo, index) => {
+                        folder.file(`photo_${index + 1}.jpg`, photo.split(",")[1], { base64: true });
+                    });
+                }
+
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, "Données_Reception.zip");
+                alert("Fichier ZIP exporté avec succès !");
+            };
+        };
+
+        document.getElementById("loadDataBtn").addEventListener("click", loadData);
+        document.getElementById("deleteSelectedBtn").addEventListener("click", deleteSelected);
+        document.getElementById("exportBtn").addEventListener("click", exportToExcel);
+        document.getElementById("exportZipBtn").addEventListener("click", exportToZip);
+        document.getElementById("selectAll").addEventListener("click", () => {
+            const checkboxes = document.querySelectorAll(".selectRow");
+            checkboxes.forEach((checkbox) => checkbox.checked = document.getElementById("selectAll").checked);
         });
-
-        // Exporter les données en Excel
-        document.getElementById("exportExcel").addEventListener("click", () => {
-            const worksheetData = filteredData.map((item) => ({
-                "Nom Destinataire": item.recipientName,
-                "Nom Réceptionnaire": item.receiverName,
-                "Nombre de Colis": item.packageCount,
-                Email: item.email,
-                "Date de Réception": item.deliveryDate,
-                Livré: item.delivered === "true" ? "Oui" : "Non",
-            }));
-
-            const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Données");
-            XLSX.writeFile(workbook, "reception_data.xlsx");
-        });
-
-        // Exporter les données en ZIP
-        document.getElementById("exportZip").addEventListener("click", async () => {
-            const zip = new JSZip();
-
-            filteredData.forEach((item) => {
-                zip.file(`${item.id}_signature.jpeg`, item.signature.split(",")[1], { base64: true });
-
-                item.photos.forEach((photo, index) => {
-                    zip.file(`${item.id}_photo_${index + 1}.jpeg`, photo.split(",")[1], { base64: true });
-                });
-            });
-
-            const content = await zip.generateAsync({ type: "blob" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(content);
-            link.download = "reception_data.zip";
-            link.click();
-        });
-
-        openDB();
     </script>
 </body>
 </html>
