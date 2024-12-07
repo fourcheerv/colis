@@ -1,0 +1,15 @@
+subject: "Notification : Colis non livré"
+body: |
+  Bonjour,
+
+  Nous avons remarqué que le colis n'a pas été livré. 
+  Voici les détails :
+  - Nom du destinataire : {{recipientName}}
+  - Nom du réceptionnaire : {{receiverName}}
+  - Nombre de colis : {{packageCount}}
+  - Date de réception prévue : {{deliveryDate}}
+
+  Veuillez vérifier cette situation au plus vite.
+
+  Cordialement,
+  L'équipe de gestion des colis
