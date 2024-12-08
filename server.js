@@ -1,63 +1,61 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const sgMail = require('@sendgrid/mail');
 require('dotenv').config();
 
+// Charger la clé API depuis les variables d'environnement
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+
+// Configurer SendGrid
+sgMail.setApiKey(SENDGRID_API_KEY);
+
 const app = express();
-const PORT = 3000;
-
-// Middleware
-app.use(cors());
 app.use(bodyParser.json());
+app.use(cors()); // Permettre les requêtes CORS pour le frontend
 
-// Endpoint pour l'envoi d'emails
+// Endpoint pour envoyer un email
 app.post('/send-email', async (req, res) => {
-    const { email, recipientName, receiverName, packageCount } = req.body;
+    const { recipientName, receiverName, packageCount, deliveryDate, serviceEmail, delivered } = req.body;
 
-    // Vérifier que tous les champs requis sont remplis
-    if (!email || !recipientName || !receiverName || !packageCount) {
-        return res.status(400).send('Tous les champs sont requis.');
+    if (!recipientName || !receiverName || !packageCount || !deliveryDate || !serviceEmail) {
+        return res.status(400).json({ error: "Tous les champs sont requis." });
     }
+
+    const msg = {
+        to: serviceEmail,
+        from: 'spokorski@gmail.com', // Remplacez par une adresse validée dans SendGrid
+        subject: `Notification de colis - Statut : ${delivered === "true" ? "Livré" : "Non livré"}`,
+        text: `
+            Bonjour,
+            Voici les détails du colis :
+            - Destinataire : ${recipientName}
+            - Réceptionnaire : ${receiverName}
+            - Nombre de colis : ${packageCount}
+            - Date de réception : ${deliveryDate}
+            - Statut : ${delivered === "true" ? "Livré" : "Non livré"}
+        `,
+        html: `
+            <p><strong>Bonjour,</strong></p>
+            <p>Voici les détails du colis :</p>
+            <ul>
+                <li><strong>Destinataire :</strong> ${recipientName}</li>
+                <li><strong>Réceptionnaire :</strong> ${receiverName}</li>
+                <li><strong>Nombre de colis :</strong> ${packageCount}</li>
+                <li><strong>Date de réception :</strong> ${deliveryDate}</li>
+                <li><strong>Statut :</strong> ${delivered === "true" ? "Livré" : "Non livré"}</li>
+            </ul>
+        `,
+    };
 
     try {
-        // Configurer le transporteur Nodemailer
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.GMAIL_USER, // Adresse email de l'expéditeur
-                pass: process.env.GMAIL_PASS, // Mot de passe de l'application
-            },
-        });
-
-        // Configurer les options de l'email
-        const mailOptions = {
-            from: process.env.GMAIL_USER,
-            to: email,
-            subject: 'Confirmation de réception de colis',
-            text: `Bonjour ${recipientName},
-
-Voici les détails de votre colis :
-
-Nom du réceptionnaire : ${receiverName}
-Nombre de colis : ${packageCount}
-
-Merci de votre confiance.
-
-Cordialement,
-L'équipe de gestion de colis`,
-        };
-
-        // Envoyer l'email
-        await transporter.sendMail(mailOptions);
-        res.status(200).send('Email envoyé avec succès.');
+        await sgMail.send(msg);
+        res.status(200).json({ message: "Email envoyé avec succès !" });
     } catch (error) {
-        console.error('Erreur lors de l\'envoi de l\'email :', error);
-        res.status(500).send('Erreur lors de l\'envoi de l\'email.');
+        console.error("Erreur lors de l'envoi de l'email :", error.response?.body || error.message);
+        res.status(500).json({ error: "Erreur lors de l'envoi de l'email." });
     }
 });
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-    console.log(`Serveur en cours d'exécution sur http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
