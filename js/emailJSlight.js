@@ -1,4 +1,4 @@
-/*colis si livré à oui*/
+/*colis si livré à non*/
 document.getElementById("packageForm").addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -8,7 +8,7 @@ document.getElementById("packageForm").addEventListener("submit", async (event) 
         return;
     }
 
-    if (deliveredRadio.value === "true") {
+    if (deliveredRadio.value === "false") {
         const serviceEmail = document.getElementById("serviceEmails").value;
         const recipientName = document.getElementById("recipientName").value;
         const packageCount = document.getElementById("packageCount").value;
@@ -44,7 +44,7 @@ document.getElementById("packageForm").addEventListener("submit", async (event) 
             });
 
             // Envoi de l'e-mail via EmailJS
-            await emailjs.send("service_colis", "template_colis_oui", {
+            await emailjs.send("service_colis", "template_colis", {
                 serviceEmail: serviceEmail,
                 recipientName: recipientName,
                 packageCount: packageCount,
