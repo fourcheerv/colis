@@ -49,7 +49,7 @@ document.getElementById("packageForm").addEventListener("submit", async (event) 
                 recipientName: recipientName,
                 packageCount: packageCount,
                 receiverName: receiverName,
-                message: "Le colis a été livré merci pour votre soutien.",
+                message: "Le colis a été non livré merci pour votre soutien.",
             });
 
             // Mise à jour à 100% après l'envoi réussi
