@@ -1,3 +1,4 @@
+/*colis si livré à oui*/
 document.getElementById("packageForm").addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -7,7 +8,7 @@ document.getElementById("packageForm").addEventListener("submit", async (event) 
         return;
     }
 
-    if (deliveredRadio.value === "false") {
+    if (deliveredRadio.value === "true") {
         const serviceEmail = document.getElementById("serviceEmails").value;
         const recipientName = document.getElementById("recipientName").value;
         const packageCount = document.getElementById("packageCount").value;
@@ -43,12 +44,12 @@ document.getElementById("packageForm").addEventListener("submit", async (event) 
             });
 
             // Envoi de l'e-mail via EmailJS
-            await emailjs.send("service_colis", "template_colis", {
+            await emailjs.send("service_colis", "template_colis_oui", {
                 serviceEmail: serviceEmail,
                 recipientName: recipientName,
                 packageCount: packageCount,
                 receiverName: receiverName,
-                message: "Le colis n'a pas pu être livré en raison d'une absence ou d'un autre motif. Merci de contacter le service manutention pour le récupérer.",
+                message: "Le colis a été livré merci pour votre soutien.",
             });
 
             // Mise à jour à 100% après l'envoi réussi
