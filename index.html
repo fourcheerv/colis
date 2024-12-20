@@ -4,246 +4,260 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulaire de réception des colis</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="./css/index.css">
+<link rel="manifest" href="/remote_colis/manifest.json">
+
+    <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js">
+
+/*raccourci sur les smartphone appel d'un serviceworker pour application PWA*/
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/remote_colis/js/service-worker.js")
+      .then((registration) => {
+        console.log("Service Worker enregistré avec succès:", registration);
+      })
+      .catch((error) => {
+        console.error("Échec de l'enregistrement du Service Worker:", error);
+      });
+  });
+}
+
+
+</script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
-    <h1>Formulaire de remise des colis</h1>
-    <form id="packageForm">
-        <label for="recipientName">Nom du destinataire :</label>
-        <input type="text" id="recipientName" name="recipientName" required>
-        <span id="recipientNameError" class="error-message"></span>
+    <div class="header-content">
+        <img src="./img/logo.png" alt="Logo" class="logo">
+        <h1>Formulaire de remise des colis</h1>
+    </div>
+    <main>
+        <section>
+            <form id="packageForm">
+                <label for="recipientName">Nom du destinataire :</label>
+                <input type="text" id="recipientName" name="recipientName" required>
+                <span id="recipientNameError" class="error-message"></span>
 
-        <label for="receiverName">Nom du réceptionnaire :</label>
-        <input type="text" id="receiverName" name="receiverName" required>
-        <span id="receiverNameError" class="error-message"></span>
+                <label for="receiverName">Nom du réceptionnaire :</label>
+                <input type="text" id="receiverName" name="receiverName" required>
+                <span id="receiverNameError" class="error-message"></span>
 
-        <label for="packageCount">Nombre de colis :</label>
-        <input type="number" id="packageCount" name="packageCount" min="1" required>
-        <span id="packageCountError" class="error-message"></span>
+                <label for="packageCount">Nombre de colis :</label>
+                <input type="number" id="packageCount" name="packageCount" min="1" required>
+                <span id="packageCountError" class="error-message"></span>
 
-        <label for="email">Adresse email du réceptionnaire :</label>
-        <input type="email" id="email" name="email">
-        <span id="emailError" class="error-message"></span>
+                <div class="email-list">
+                    <label for="serviceEmails">Emails Référents par service si colis non remis :</label>
+                <select id="serviceEmails">
+                    <option value="" disabled selected>Sélectionnez un email</option>
+                    <optgroup label="Test Seb">
+                        <option value="sebastien.pokorski@estrepublicain.fr">sebastien.pokorski@estrepublicain.fr</option>
+                    </optgroup>
+                    <optgroup label="Publicité Ebra Médias">
+                        <option value="charline.visca@ebramedia.fr">charline.visca@ebramedia.fr</option>
+                    </optgroup>
+                    <optgroup label="Rédaction">
+                        <option value="sandrine.florentin@estrepublicain.fr">sandrine.florentin@estrepublicain.fr</option>
+                    </optgroup>
+                    <optgroup label="Ventes">
+                        <option value="celia.dubois@estrepublicain.fr">celia.dubois@estrepublicain.fr</option>
+                    </optgroup>
+                    <optgroup label="Ebra Services">
+                        <option value="myriam.lefebvre@ebraservices.fr">myriam.lefebvre@ebraservices.fr</option>
+                    </optgroup>
+                </select>
+                </div>
 
-        <label for="deliveryDate">Date et Heure de réception :</label>
-        <input type="datetime-local" id="deliveryDate" name="deliveryDate" required>
-        <span id="deliveryDateError" class="error-message"></span>
+                <label for="deliveryDate">Date et Heure de réception :</label>
+                <input type="datetime-local" id="deliveryDate" name="deliveryDate" required>
+                <span id="deliveryDateError" class="error-message"></span>
 
-        <label for="fileUpload">Prendre une photo :</label>
-        <input type="file" id="fileUpload" accept="image/*" capture="camera">
-        <div id="imagePreview"></div>
+                <label for="fileUpload">Prendre une photo :</label>
+                <input type="file" id="fileUpload" accept="image/*" capture="camera">
+                <div id="imagePreview"></div>
 
-        <label>Signature :</label>
-        <canvas id="signaturePad" width="500" height="200" style="border: 1px solid #000;"></canvas>
-        <button type="button" id="clearSignature">Effacer la signature</button>
-        <span id="signatureError" class="error-message"></span>
+                <label>Signature :</label>
+                <canvas id="signaturePad" width="500" height="200" style="border: 1px solid #000;"></canvas>
+                <button type="button" id="clearSignature" class="button-clear">Effacer la signature</button>
+                <span id="signatureError" class="error-message"></span>
 
-        <p>Colis Livré :</p>
-        <div class="radio-group">
-            <label>
-                <input type="radio" id="trueRadio" name="delivered" value="true" required />
-                Oui
-            </label>
-            <label>
-                <input type="radio" id="falseRadio" name="delivered" value="false" />
-                Non
-            </label>
-        </div>
-        <span id="deliveredError" class="error-message"></span>
-
-        <button type="submit">Sauvegarder en local</button>
-        <button type="button" id="clearForm">Vider les champs</button>
-        <div><a href="https://fourcheerv.github.io/colis/results.html">Voir les résultats</a></div>
-    </form>
-
+                <p><strong>Colis Livré :</strong></p>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" id="trueRadio" name="delivered" value="true" required>
+                        Oui
+                    </label>
+                    <label>
+                        <input type="radio" id="falseRadio" name="delivered" value="false">
+                        Non
+                    </label>
+                </div>
+                <span id="deliveredError" class="error-message"></span>
+            
+                <div id="loadingPopup" class="hidden">
+                    <div style="background-color: white; padding: 20px; border-radius: 10px; text-align: center; width: 300px;">
+                        <p>Envoi de l'email en cours...</p>
+                        <div style="width: 100%; background-color: #f3f3f3; margin-top: 10px;">
+                            <div id="popupProgressBar" style="width: 0; height: 10px; background-color: #4caf50;"></div>
+                        </div>
+                    </div>
+                </div>               
+                
+                <button type="submit" id="saveDataBtn" class="button-save">Sauvegarder</button>
+                <button type="button" id="clearForm" class="button-clear">Vider les champs</button>
+                <div><a href="admin_interface.html" id="viewResultsLink">Voir les résultats</a></div>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Gestion des Colis</p>
+    </footer>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script>
+        // Initialisation de PouchDB
+        const localDB = new PouchDB('receptions');
+        const remoteDB = new PouchDB('https://apikey-v2-237azo7t1nwttyu787vl2zuxfh5ywxrddnfhcujd2nbu:b7ce3f8c0a99a10c0825a4c1ff68fe62@ca3c9329-df98-4982-a3dd-ba2b294b02ef-bluemix.cloudantnosqldb.appdomain.cloud/receptions');
 
-    document.addEventListener("DOMContentLoaded", () => {
-    const fileUpload = document.getElementById("fileUpload");
-    const imagePreview = document.getElementById("imagePreview");
-    const signatureCanvas = document.getElementById("signaturePad");
-    const signaturePad = new SignaturePad(signatureCanvas, {
-        backgroundColor: '#fff', // Ajout d'un fond blanc pour éviter les transparences
-    });
+        localDB.sync(remoteDB, {
+            live: true,
+            retry: true
+        }).on('error', (err) => {
+            console.error("Erreur de synchronisation :", err);
+        });
+        // champs appareil photo
+        const fileUpload = document.getElementById("fileUpload");
+        const imagePreview = document.getElementById("imagePreview");
+        const signatureCanvas = document.getElementById("signaturePad");
+        const signaturePad = new SignaturePad(signatureCanvas, {
+            backgroundColor: '#fff',
+        });
 
-    let imageFiles = []; // Stockage temporaire des images compressées
+        let imageFiles = [];
 
-    // Fonction pour afficher les messages d'erreur
-    function afficherErreur(idChamp, message) {
-        const errorElement = document.getElementById(idChamp + "Error");
-        if (errorElement) errorElement.innerText = message;
-    }
-
-    // Compression des images avant affichage et stockage
-    function compresserImage(file, callback) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                canvas.width = 800; // Largeur maximum
-                canvas.height = (img.height / img.width) * 800; // Hauteur proportionnelle
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(callback, "image/jpeg", 0.7); // Compression JPEG
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // Gestion de l'aperçu des images
-    fileUpload.addEventListener("change", () => {
-        const file = fileUpload.files[0];
-        if (file && file.type.startsWith("image/")) {
-            compresserImage(file, (compressedBlob) => {
-                imageFiles.push(compressedBlob);
-
-                // Aperçu des images
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.createElement("img");
-                    img.src = e.target.result;
-                    img.style.maxWidth = "200px";
-                    img.style.margin = "5px";
-                    imagePreview.appendChild(img);
+        // Compression des images
+        function compresserImage(file, callback) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+                    canvas.width = 800;
+                    canvas.height = (img.height / img.width) * 800;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(callback, "image/jpeg", 0.7);
                 };
-                reader.readAsDataURL(compressedBlob);
-            });
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
-        fileUpload.value = ""; // Réinitialiser l'input file
-    });
-
-    // Initialisation IndexedDB
-    const dbName = "ReceptionDB";
-    let db;
-
-    const openDB = () => {
-        const request = indexedDB.open(dbName, 1);
-
-        request.onupgradeneeded = (event) => {
-            db = event.target.result;
-
-            // Créer un ObjectStore pour stocker les données de réception
-            if (!db.objectStoreNames.contains("receptions")) {
-                const objectStore = db.createObjectStore("receptions", {
-                    keyPath: "id",
-                    autoIncrement: true,
-                });
-
-                objectStore.createIndex("email", "email", { unique: false });
+        // 3 photos maximum
+        fileUpload.addEventListener("change", () => {
+            if (imageFiles.length >= 3) {
+                alert("Vous ne pouvez télécharger que 3 photos au maximum.");
+                fileUpload.value = "";
+                return;
             }
-        };
 
-        request.onsuccess = (event) => {
-            db = event.target.result;
-            console.log("IndexedDB est prêt !");
-        };
+            const file = fileUpload.files[0];
+            if (file && file.type.startsWith("image/")) {
+                compresserImage(file, (compressedBlob) => {
+                    imageFiles.push(compressedBlob);
 
-        request.onerror = (event) => {
-            console.error("Erreur avec IndexedDB :", event.target.error);
-        };
-    };
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement("img");
+                        img.src = e.target.result;
+                        img.style.maxWidth = "200px";
+                        img.style.margin = "5px";
+                        imagePreview.appendChild(img);
+                    };
+                    reader.readAsDataURL(compressedBlob);
+                });
+            }
+            fileUpload.value = "";
+        });
 
-    openDB();
+        // soumission du formulaire
+        document.getElementById("packageForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            //test 1 photo uploader minimum
+            if (imageFiles.length === 0) {
+                alert("Veuillez ajouter au moins une photo avant de sauvegarder !");
+                return;
+            }
 
-    // Fonction pour sauvegarder les données dans IndexedDB
-    const saveToIndexedDB = (data) => {
-        const transaction = db.transaction(["receptions"], "readwrite");
-        const objectStore = transaction.objectStore("receptions");
+            const formData = new FormData(event.target);
+            const deliveredRadio = document.querySelector('input[name="delivered"]:checked');
 
-        const request = objectStore.add(data);
-        request.onsuccess = () => {
-            alert("Données sauvegardées dans IndexedDB !");
-            document.getElementById("clearForm").click(); // Réinitialiser le formulaire après sauvegarde
-        };
+            if (!deliveredRadio) {
+                alert("Veuillez sélectionner si le colis a été livré !");
+                return;
+            }
+            //formatage de la date pour fr-Fr dans le champs date selectionné par l'utilisateur
+            const deliveryDateInput = formData.get("deliveryDate");
+            const deliveryDate = new Date(deliveryDateInput);
 
-        request.onerror = (event) => {
-            console.error("Erreur lors de l'ajout :", event.target.error);
-            alert("Une erreur est survenue. Les données n'ont pas été enregistrées.");
-        };
-    };
-
-    // Gestion de la soumission du formulaire
-    document.getElementById("packageForm").addEventListener("submit", async (event) => {
-        event.preventDefault();
-
-        const formData = new FormData(event.target);
-
-        // Collecter les données du formulaire
-        const data = {
-            recipientName: formData.get("recipientName"),
-            receiverName: formData.get("receiverName"),
-            packageCount: formData.get("packageCount"),
-            email: formData.get("email"),
-            deliveryDate: formData.get("deliveryDate"),
-            delivered: formData.get("delivered"),
-            signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL("image/jpeg"),
-            photos: [],
-        };
-
-        // Valider les champs
-        let valid = true;
-        if (!data.recipientName) {
-            afficherErreur("recipientName", "Nom du destinataire requis.");
-            valid = false;
-        }
-        if (!data.receiverName) {
-            afficherErreur("receiverName", "Nom du réceptionnaire requis.");
-            valid = false;
-        }
-        if (!data.packageCount || data.packageCount < 1) {
-            afficherErreur("packageCount", "Nombre de colis invalide.");
-            valid = false;
-        }
-        if (!data.email) {
-            afficherErreur("email", "Email requis.");
-            valid = false;
-        }
-        if (!data.deliveryDate) {
-            afficherErreur("deliveryDate", "Date et heure requises.");
-            valid = false;
-        }
-        if (!data.signature) {
-            alert("Veuillez fournir une signature !");
-            valid = false;
-        }
-
-        if (!valid) return;
-
-        // Ajouter les photos compressées
-        for (let file of imageFiles) {
-            const dataURL = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.readAsDataURL(file);
+            const formattedDeliveryDate = deliveryDate.toLocaleString('fr-FR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
             });
-            data.photos.push(dataURL);
-        }
+            
+            // date de réception
+            const data = {
+               _id: new Date().toISOString(),
+                recipientName: formData.get("recipientName"),
+                receiverName: formData.get("receiverName"),
+                packageCount: formData.get("packageCount"),
+                serviceEmail: document.getElementById("serviceEmails").value,
+                deliveryDate: formattedDeliveryDate,
+                delivered: deliveredRadio.value,
+                signature: signaturePad.isEmpty() ? null : signaturePad.toDataURL("image/jpeg"),
+                photos: [],
+            };
 
-        saveToIndexedDB(data);
-    });
+            if (!data.signature) {
+                alert("Veuillez fournir une signature !");
+                return;
+            }
 
-    // Effacer la signature
-    document.getElementById("clearSignature").addEventListener("click", () => {
-        signaturePad.clear();
-    });
+            for (let file of imageFiles) {
+                const dataURL = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                });
+                data.photos.push(dataURL);
+            }
 
-    // Réinitialiser le formulaire
-    document.getElementById("clearForm").addEventListener("click", () => {
-        document.getElementById("packageForm").reset();
-        imagePreview.innerHTML = "";
-        imageFiles = [];
-        signaturePad.clear();
+            try {
+                await localDB.put(data);
+                alert("Données sauvegardées et synchronisées !");
+                document.getElementById("clearForm").click();
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement :", error);
+                alert("Une erreur est survenue lors de l'enregistrement.");
+            }
+        });
 
-        // Réinitialiser les messages d'erreur
-        const errorMessages = document.querySelectorAll(".error-message");
-        errorMessages.forEach((message) => (message.innerText = ""));
-    });
-});
+        document.getElementById("clearSignature").addEventListener("click", () => {
+            signaturePad.clear();
+        });
 
+        document.getElementById("clearForm").addEventListener("click", () => {
+            document.getElementById("packageForm").reset();
+            imagePreview.innerHTML = "";
+            imageFiles = [];
+            signaturePad.clear();
+        });
     </script>
+    <!-- Script envoi email-->
+    <script src="./js/emailJSlight.js"></script>
 </body>
 </html>
