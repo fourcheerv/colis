@@ -1,6 +1,6 @@
 // Initialisation de PouchDB pour la synchronisation avec CouchDB
 const localDB = new PouchDB('receptions');
-const remoteDB = new PouchDB('https://apikey-v2-237azo7t1nwttyu787vl2zuxfh5ywxrddnfhcujd2nbu:b7ce3f8c0a99a10c0825a4c1ff68fe62@ca3c9329-df98-4982-a3dd-ba2b294b02ef-bluemix.cloudantnosqldb.appdomain.cloud/receptions');
+const remoteDB = new PouchDB('https://ApiKey-db7a523c-512a-4cc6-8642-81465c9309b7:96dfcace4337bdf9e351c06712f61c6c@d0331749-24c1-4b83-b0d7-2be9b239530d-bluemix.cloudantnosqldb.appdomain.cloud/receptions');
 
 // Initialisation pagination
 let currentPage = 1;
@@ -154,9 +154,10 @@ const compactDatabase = async (remoteDBName, username, password) => {
 };
 
 // Exemple d'appel de la fonction
-const remoteDBName = "https://ca3c9329-df98-4982-a3dd-ba2b294b02ef-bluemix.cloudantnosqldb.appdomain.cloud/receptions";
-const username = "apikey-v2-237azo7t1nwttyu787vl2zuxfh5ywxrddnfhcujd2nbu"; // Remplacez par votre nom d'utilisateur
-const password = "b7ce3f8c0a99a10c0825a4c1ff68fe62"; // Remplacez par votre clé secrète
+const remoteDBName = "https://d0331749-24c1-4b83-b0d7-2be9b239530d-bluemix.cloudantnosqldb.appdomain.cloud/receptions";
+const username = "ApiKey-db7a523c-512a-4cc6-8642-81465c9309b7"; // Remplacez par votre nom d'utilisateur
+const password = "96dfcace4337bdf9e351c06712f61c6c"; // Remplacez par votre clé secrète
+
 
 // Fonction pour purger la base CouchDB
 const purgeDatabase = async (remoteDB, username, password) => {
