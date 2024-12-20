@@ -44,7 +44,7 @@ document.getElementById("packageForm").addEventListener("submit", async (event) 
             });
 
             // Envoi de l'e-mail via EmailJS
-            await emailjs.send("service_colis", "template_colis", {
+            await emailjs.send("service_colis", "template_colis_non", {
                 serviceEmail: serviceEmail,
                 recipientName: recipientName,
                 packageCount: packageCount,
