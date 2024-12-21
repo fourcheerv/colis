@@ -11,8 +11,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <!-- Script envoi email-->
-    <script src="./js/emailJSlight.js"></script>
 </head>
 <body>
 <header>
@@ -100,46 +98,49 @@
         </form>
     </section>
 </main>
+
 <footer>
     <p>&copy; 2024 Gestion des Colis</p>
 </footer>
 
 <script>
-    // Initialisation de la base de données avec API
     let localDB = null;
     let remoteDB = null;
 
+    // Initialisation de la base de données avec API
     async function initializeDB() {
         try {
-            // Appel à l'API pour obtenir l'URL sécurisée
             const response = await fetch('https://colis-er.vercel.app/api/getdata');
-            if (!response.ok) throw new Error("Erreur lors de la récupération de l'URL.");
+            if (!response.ok) {
+                console.error("Erreur API :", response.status, response.statusText);
+                throw new Error("Erreur lors de la récupération de l'URL.");
+            }
 
             const data = await response.json();
+            console.log("URL de la base récupérée :", data.cloudantUrl);
+
+            if (!data.cloudantUrl) {
+                throw new Error("L'URL de la base de données est manquante.");
+            }
+
             remoteDB = new PouchDB(data.cloudantUrl);
             localDB = new PouchDB('receptions');
 
-            // Synchronisation des bases de données
-            localDB.sync(remoteDB, {
-                live: true,
-                retry: true
-            }).on('error', (err) => {
-                console.error("Erreur de synchronisation :", err);
-            });
-
+            localDB.sync(remoteDB, { live: true, retry: true }).on('error', console.error);
             console.log("Bases de données initialisées avec succès.");
         } catch (error) {
-            console.error("Erreur d'initialisation de la base de données :", error);
+            console.error("Erreur lors de l'initialisation de la base de données :", error);
             alert("Impossible de connecter à la base de données distante.");
         }
     }
 
+    // Initialiser la base de données dès que la page est chargée
     initializeDB();
 
-    // Gestion des photos et des signatures
     const fileUpload = document.getElementById("fileUpload");
     const imagePreview = document.getElementById("imagePreview");
     const signaturePad = new SignaturePad(document.getElementById("signaturePad"), { backgroundColor: '#fff' });
+
     let imageFiles = [];
 
     function compresserImage(file, callback) {
@@ -251,4 +252,3 @@
 
 </body>
 </html>
-
