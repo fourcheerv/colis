@@ -1,5 +1,5 @@
 {
-  "name": "remote_colis",
+  "name": "colis",
   "version": "1.0.0",
   "main": "couchdb.js",
   "scripts": {
