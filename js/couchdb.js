@@ -137,82 +137,6 @@ const deleteSelected = async () => {
     }
 };
 
-// Fonction pour compacter la base CouchDB
-const compactDatabase = async (remoteDBName, username, password) => {
-    try {
-        // Construire l'URL de compaction
-        const url = `${remoteDBName}/_compact`;
-
-        // Construire l'en-tête Authorization avec Basic Auth
-        const authHeader = "Basic " + btoa(`${username}:${password}`);
-
-        // Effectuer la requête POST
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Authorization": authHeader,
-                "Content-Type": "application/json",
-            },
-        });
-
-        // Vérifier la réponse
-        if (response.ok) {
-            alert("Compaction lancée avec succès. Cela peut prendre un moment.");
-        } else {
-            const errorData = await response.json();
-            console.error("Erreur lors de la compaction :", errorData);
-            alert(`Erreur lors de la compaction : ${errorData.reason || "Inconnue"}`);
-        }
-    } catch (error) {
-        console.error("Erreur lors de la compaction :", error);
-        alert(`Une erreur est survenue lors de la compaction : ${error.message}`);
-    }
-};
-
-// Exemple d'appel de la fonction
-const remoteDBName = "https://d0331749-24c1-4b83-b0d7-2be9b239530d-bluemix.cloudantnosqldb.appdomain.cloud/receptions";
-const username = "apikey-v2-1qcgr6h8dw5ugml0zgahm9uyqdil4igzw0l5jy1bjszm"; // Remplacez par votre nom d'utilisateur
-const password = "96dfcace4337bdf9e351c06712f61c6c"; // Remplacez par votre clé secrète
-
-// Fonction pour purger la base CouchDB
-const purgeDatabase = async (remoteDB, username, password) => {
-    try {
-        if (!remoteDB || !username || !password) {
-            throw new Error("Les paramètres 'remoteDB', 'username' ou 'password' sont manquants.");
-        }
-
-        // Récupérer tous les documents depuis la base distante
-        const result = await remoteDB.allDocs({ include_docs: true });
-
-        const docsToPurge = result.rows
-            .filter(row => row.doc && row.doc._deleted)
-            .map(row => ({
-                _id: row.doc._id,
-                _rev: row.doc._rev,
-                _deleted: true
-            }));
-
-        if (docsToPurge.length === 0) {
-            alert("Aucun document à purger !");
-            return;
-        }
-
-        // Envoyer les documents à supprimer
-        const response = await remoteDB.bulkDocs(docsToPurge);
-
-        // Vérifier les erreurs
-        const errors = response.filter(res => res.error);
-        if (errors.length > 0) {
-            console.error("Erreurs lors de la purge :", errors);
-            alert("Certaines suppressions ont échoué.");
-        } else {
-            alert("Base purgée avec succès !");
-        }
-    } catch (error) {
-        console.error("Erreur lors de la purge :", error);
-        alert(`Une erreur est survenue lors de la purge : ${error.message}`);
-    }
-};
 
 // Exporter les données au format Excel
 const exportToExcel = async () => {
@@ -322,18 +246,6 @@ document.getElementById("nextPageBtn").addEventListener("click", () => {
         currentPage++;
         loadData(currentPage);
     }
-});
-
-
-document.getElementById("compactBtn").addEventListener("click", () => {
-    const confirmation = confirm("Voulez-vous vraiment lancer la compaction de la base ? Cela peut prendre du temps.");
-    if (confirmation) compactDatabase(remoteDBName, username, password);
-
-});
-
-document.getElementById("purgeBtn").addEventListener("click", () => {
-    const confirmation = confirm("Voulez-vous vraiment purger tous les éléments supprimés ?");
-    if (confirmation) purgeDatabase(remoteDB, username, password);
 });
 
 
