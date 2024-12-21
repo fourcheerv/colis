@@ -3,7 +3,7 @@ const PouchDB = require('pouchdb');
 export default async function handler(req, res) {
     try {
         // Récupérer la clé API depuis les variables d'environnement
-        const cloudantUrl = process.env.CLOUDANT_URL;
+        const cloudantUrl = process.env.CLOUDANT_KEY;
 
         if (!cloudantUrl) {
             throw new Error("CLOUDANT_URL is not defined in environment variables.");
