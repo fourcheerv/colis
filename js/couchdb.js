@@ -1,6 +1,7 @@
 // Initialisation de PouchDB pour la synchronisation avec CouchDB
 const localDB = new PouchDB('receptions');
-const remoteDB = new PouchDB('https://colis-er.vercel.app/api/getdata');
+const remoteDB = new PouchDB('https://apikey-v2-1qcgr6h8dw5ugml0zgahm9uyqdil4igzw0l5jy1bjszm:96dfcace4337bdf9e351c06712f61c6c@d0331749-24c1-4b83-b0d7-2be9b239530d-bluemix.cloudantnosqldb.appdomain.cloud');
+
 // Initialisation pagination
 let currentPage = 1;
 const rowsPerPage = 20; // Nombre de lignes par page
