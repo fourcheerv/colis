@@ -1,14 +1,30 @@
 // Initialisation de PouchDB pour la synchronisation avec CouchDB
 const localDB = new PouchDB('receptions');
-const remoteDB = new PouchDB('https://apikey-v2-1qcgr6h8dw5ugml0zgahm9uyqdil4igzw0l5jy1bjszm:96dfcace4337bdf9e351c06712f61c6c@d0331749-24c1-4b83-b0d7-2be9b239530d-bluemix.cloudantnosqldb.appdomain.cloud/receptions');
+let remoteDB;
+
+// Fonction pour initialiser la base de données distante
+const initializeRemoteDB = async () => {
+    try {
+        const response = await fetch('/api/getdata'); // Appel à l'API pour récupérer l'URL
+        if (!response.ok) throw new Error("Erreur lors de la récupération de l'URL.");
+        const data = await response.json();
+        remoteDB = new PouchDB(data.cloudantUrl);
+
+        // Synchronisation avec CouchDB
+        localDB.sync(remoteDB, { live: true, retry: true }).on('error', console.error);
+        console.log("Base de données initialisée avec succès.");
+    } catch (error) {
+        console.error("Erreur d'initialisation de la base distante :", error.message);
+    }
+};
+
+// Appeler l'initialisation de la base distante
+initializeRemoteDB();
 
 // Initialisation pagination
 let currentPage = 1;
 const rowsPerPage = 20; // Nombre de lignes par page
 let totalRows = 0; // Total des lignes disponibles
-
-// Synchronisation avec CouchDB
-localDB.sync(remoteDB, { live: true, retry: true }).on('error', console.error);
 
 // Charger les données dans le tableau
 const loadData = async (page = 1) => {
