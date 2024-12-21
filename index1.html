@@ -82,6 +82,16 @@
                 </div>
                 <span id="deliveredError" class="error-message"></span>
 
+                <!-- Radio : barre de progression envoi -->
+                <div id="loadingPopup" class="hidden">
+                    <div style="background-color: white; padding: 20px; border-radius: 10px; text-align: center; width: 300px;">
+                        <p>Envoi de l'email en cours...</p>
+                        <div style="width: 100%; background-color: #f3f3f3; margin-top: 10px;">
+                            <div id="popupProgressBar" style="width: 0; height: 10px; background-color: #4caf50;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Boutons -->
                 <button type="submit" id="saveDataBtn">Sauvegarder</button>
                 <button type="button" id="clearForm">Vider les champs</button>
