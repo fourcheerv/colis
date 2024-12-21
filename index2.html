@@ -118,36 +118,16 @@
         }
 
         // Initialisation des bases de données locales et distantes
-       // Fonction pour initialiser la base de données
-       async function initializeDB() {
-            try {
-                // Appel à l'API pour obtenir l'URL sécurisée
-                const response = await fetch('/api/getdata');
-                if (!response.ok) {
-                    throw new Error("Erreur lors de la récupération de l'URL de la base de données.");
-                }
-                const data = await response.json();
-                const remoteDB = new PouchDB(data.cloudantUrl);
+         // Initialisation de PouchDB
+         const localDB = new PouchDB('receptions');
+        const remoteDB = new PouchDB('https://colis-er.vercel.app/api/getdata');
 
-                const localDB = new PouchDB('receptions');
-
-                // Synchronisation des bases de données
-                localDB.sync(remoteDB, {
-                    live: true,
-                    retry: true
-                }).on('error', (err) => {
-                    console.error("Erreur de synchronisation :", err);
-                });
-
-                console.log("Base de données initialisée avec succès.");
-            } catch (error) {
-                console.error("Erreur d'initialisation de la base de données :", error.message);
-            }
-        }
-
-        // Initialiser la base de données lors du chargement de la page
-        initializeDB();
-
+        localDB.sync(remoteDB, {
+            live: true,
+            retry: true
+        }).on('error', (err) => {
+            console.error("Erreur de synchronisation :", err);
+        });
         const fileUpload = document.getElementById("fileUpload");
         const imagePreview = document.getElementById("imagePreview");
         const signaturePad = new SignaturePad(document.getElementById("signaturePad"), { backgroundColor: '#fff' });
