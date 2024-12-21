@@ -112,7 +112,7 @@
     async function initializeDB() {
         try {
             // Appel à l'API pour obtenir l'URL sécurisée
-            const response = await fetch('/api/getdata');
+            const response = await fetch('https://colis-er.vercel.app/api/getdata');
             if (!response.ok) throw new Error("Erreur lors de la récupération de l'URL.");
 
             const data = await response.json();
