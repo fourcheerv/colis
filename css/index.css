@@ -15,14 +15,25 @@ body{
     margin: 0px;
 }
 
-/* Conteneur pour le logo et le titre */
-.header-content {
-    display: flex;
-    flex-direction: column; /* Logo et titre empilés */
-    align-items: center; /* Centrer horizontalement */
-    justify-content: center; /* Centrer verticalement */
+@keyframes scrollHeader {
+    0% {
+        transform: translateY(-100%); /* Hors de la vue en haut */
+    }
+    100% {
+        transform: translateY(100%); /* Hors de la vue en bas */
+    }
+}
+
+header {
+    background-color: #003d66;
+    color: white;
+    padding: 20px;
     text-align: center;
-    gap: 15px; /* Espacement entre le logo et le titre */
+    font-size: 1.5em;
+    animation: scrollHeader 10s linear infinite; /* Durée de 10s, mouvement continu */
+    position: fixed; /* Pour que le header soit toujours visible */
+    width: 100%; /* S'assurer qu'il prend toute la largeur */
+    top: 0; /* Positionner en haut */
 }
 
 .logo {
