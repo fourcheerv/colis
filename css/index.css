@@ -15,25 +15,16 @@ body{
     margin: 0px;
 }
 
-@keyframes scrollHeader {
-    0% {
-        transform: translateY(-100%); /* Hors de la vue en haut */
-    }
-    100% {
-        transform: translateY(100%); /* Hors de la vue en bas */
-    }
-}
-
 header {
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Assurez-vous que le header reste au-dessus des autres éléments */
     background-color: #003d66;
     color: white;
     padding: 20px;
     text-align: center;
     font-size: 1.5em;
-    animation: scrollHeader 10s linear infinite; /* Durée de 10s, mouvement continu */
-    position: fixed; /* Pour que le header soit toujours visible */
-    width: 100%; /* S'assurer qu'il prend toute la largeur */
-    top: 0; /* Positionner en haut */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optionnel : ajoute une ombre pour le style */
 }
 
 .logo {
